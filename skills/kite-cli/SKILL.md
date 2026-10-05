@@ -1,41 +1,41 @@
 ---
-name: muse-cli
-description: Manage a personal muse.ai agent from the terminal (send messages, read chats, watch live events, feed/goals/ideas/sessions). Use when asked to message, check, or automate someone's Muse personal AI, work with muse.ai chats/threads/feed/goals outside the browser, or when the muse-cli tool itself needs installing or auth setup.
+name: kite-cli
+description: Manage a personal muse.ai agent from the terminal (send messages, read chats, watch live events, feed/goals/ideas/sessions). Use when asked to message, check, or automate someone's Muse personal AI, work with muse.ai chats/threads/feed/goals outside the browser, or when the kite-cli tool itself needs installing or auth setup.
 ---
 
-# muse-cli: drive a muse.ai personal agent from the terminal
+# kite-cli: drive a muse.ai personal agent from the terminal
 
 Assume a bare machine: only this skill is present. No repo clone, no
 dependencies, no auth. Work top to bottom; stop at the first step that
 fails and report it.
 
-The `muse-cli` package (on PyPI) talks to the muse.ai personal gateway
+The `kite-cli` package (on PyPI) talks to the muse.ai personal gateway
 directly. No browser needed after the one-time cookie export. Every command
 prints JSON.
 
 ## 1. Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/toxicwind/muse-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/toxicwind/kite-cli/main/install.sh | bash
 ```
 
-This installs the CLI from PyPI with `uv tool install muse-cli` (its own
-isolated environment) and this skill (to `~/.agents/skills/muse-cli`). CLI
-only? `uv tool install muse-cli`, `pipx install muse-cli`, or
-`pip install muse-cli` all work. The command is `muse-cli` (`muse` clashes
+This installs the CLI from PyPI with `uv tool install kite-cli` (its own
+isolated environment) and this skill (to `~/.agents/skills/kite-cli`). CLI
+only? `uv tool install kite-cli`, `pipx install kite-cli`, or
+`pip install kite-cli` all work. The command is `kite-cli` (`muse` clashes
 with Muse Code, don't use it). Verify before continuing:
 
 ```bash
-command -v muse-cli
-muse-cli --help >/dev/null && echo cli-ok   # proves the install + deps resolve
+command -v kite-cli
+kite-cli --help >/dev/null && echo cli-ok   # proves the install + deps resolve
 ```
 
 ## 2. Auth
 
 The CLI stores the user's muse.ai browser login at
-`~/.config/muse-cli/cookies.txt` (mode 0600). Chrome hides those cookies
+`~/.config/kite-cli/cookies.txt` (mode 0600). Chrome hides those cookies
 until remote debugging is on. Walk the user through the steps below and wait
-for them. Do not run `muse-cli auth export` before they say the Chrome
+for them. Do not run `kite-cli auth export` before they say the Chrome
 switch is on and a logged-in muse.ai tab is open.
 
 Access and gateway tokens are fetched fresh on every run; only cookies
@@ -81,14 +81,14 @@ use for muse.ai. Needs Chrome 144 or newer. Wait until they confirm:
 Then:
 
 ```bash
-muse-cli auth export
-test -s ~/.config/muse-cli/cookies.txt && echo auth-ok
+kite-cli auth export
+test -s ~/.config/kite-cli/cookies.txt && echo auth-ok
 ```
 
 If Chrome shows an Allow prompt, they click Allow. If the command failed
 before that click, run it once more.
 
-Success is a line like `saved N muse.ai cookies to ~/.config/muse-cli/cookies.txt`.
+Success is a line like `saved N muse.ai cookies to ~/.config/kite-cli/cookies.txt`.
 
 If it fails, the CLI prints the next step. Map it like this, and do not retry
 in a loop:
@@ -101,7 +101,7 @@ in a loop:
   and in front in that same window.
 - "no hatch_sess" / "do not include hatch_sess": the tab is open and they
   are logged out. The cookies file on disk was kept.
-- "daemon already running": `agent-browser close`, then `muse-cli auth export` once.
+- "daemon already running": `agent-browser close`, then `kite-cli auth export` once.
 - `agent-browser` not found: back to 2a.
 
 ### 2c. Copy cookies by hand
@@ -110,7 +110,7 @@ Use this when Node is unavailable, or the user does not want remote debugging on
 
 1. They are logged in at https://muse.ai/ in Chrome.
 2. DevTools (F12) → Application → Cookies → `https://muse.ai`.
-3. Write one line to `~/.config/muse-cli/cookies.txt`. `hatch_sess` is required.
+3. Write one line to `~/.config/kite-cli/cookies.txt`. `hatch_sess` is required.
    Separate cookies with `; `:
 
 ```
@@ -119,45 +119,45 @@ hatch_sess=VALUE; other_name=other_value
 
 A Netscape jar or `{"hatch_sess": "..."}` JSON also works.
 
-4. `chmod 600 ~/.config/muse-cli/cookies.txt`
-5. `test -s ~/.config/muse-cli/cookies.txt && echo auth-ok`, then `muse-cli status`.
+4. `chmod 600 ~/.config/kite-cli/cookies.txt`
+5. `test -s ~/.config/kite-cli/cookies.txt && echo auth-ok`, then `kite-cli status`.
    Stop if status fails and report the error text.
 
 ## 3. Verify end to end
 
 ```bash
-muse-cli status    # VM id, chat count, unread, identity: install + auth proven
+kite-cli status    # VM id, chat count, unread, identity: install + auth proven
 ```
 
 ## Everyday commands
 
 ```bash
-muse-cli threads                                        # main chat + side chats (session_ids)
-muse-cli history --limit 5                              # recent main-chat messages
-muse-cli history --thread <session-id> --limit 5        # one side chat
-muse-cli send "message" --wait 120                      # send + wait for the reply
-muse-cli send "message" --thread <session-id> --wait 0  # fire and forget to a side chat
-muse-cli watch --timeout 60                             # tail live agent events
-muse-cli feed --limit 5
-muse-cli goals
-muse-cli ideas
-muse-cli unread
-muse-cli seen <thread-id>
+kite-cli threads                                        # main chat + side chats (session_ids)
+kite-cli history --limit 5                              # recent main-chat messages
+kite-cli history --thread <session-id> --limit 5        # one side chat
+kite-cli send "message" --wait 120                      # send + wait for the reply
+kite-cli send "message" --thread <session-id> --wait 0  # fire and forget to a side chat
+kite-cli watch --timeout 60                             # tail live agent events
+kite-cli feed --limit 5
+kite-cli goals
+kite-cli ideas
+kite-cli unread
+kite-cli seen <thread-id>
 ```
 
 Management (visible side effects, confirm with the user first when destructive):
 
 ```bash
-muse-cli feed-react <unit-id> love
-muse-cli idea-exec <idea-id>          # the agent acts on the idea (real work)
-muse-cli session-start --title "x"    # new side chat
-muse-cli session-rename <id> "title"  # also: pin, unpin, archive, unarchive, delete
-muse-cli wake
+kite-cli feed-react <unit-id> love
+kite-cli idea-exec <idea-id>          # the agent acts on the idea (real work)
+kite-cli session-start --title "x"    # new side chat
+kite-cli session-rename <id> "title"  # also: pin, unpin, archive, unarchive, delete
+kite-cli wake
 ```
 
 ## Escape hatch
 
-`muse-cli raw <method> --body '{...}' [--param k=v]` calls any of the 258
+`kite-cli raw <method> --body '{...}' [--param k=v]` calls any of the 258
 gateway methods in `routes.json`. Prefer the named commands above; use raw
 only for methods with no wrapper.
 
@@ -174,7 +174,7 @@ only for methods with no wrapper.
   don't guess at crypto or framing.
 - Respect rate limits. Writes (send, react, execute, session ops) act as the
   user in their agent: announce them before running, never loop them.
-- A stderr line `A new release of muse-cli is available` is an upgrade
-  notice, not a failed command. Upgrade with `muse-cli update`. The check
+- A stderr line `A new release of kite-cli is available` is an upgrade
+  notice, not a failed command. Upgrade with `kite-cli update`. The check
   runs at most once a day, only in a terminal, and never changes the install
   by itself. `MUSE_NO_UPDATE_CHECK=1` silences it.

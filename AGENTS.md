@@ -1,11 +1,11 @@
-# muse-cli agent notes
+# kite-cli agent notes
 
 ## Layout
 
-- `src/muse_cli/` is the package: `cli.py` (commands), `gateway.py` (auth,
+- `src/kite_cli/` is the package: `cli.py` (commands), `gateway.py` (auth,
   Noise transport), plus `routes.json` and `desc0.bin`/`desc1.bin` data files.
 - `pyproject.toml` holds all packaging metadata (hatchling). The version is
-  read from `__version__` in `src/muse_cli/__init__.py`; that is the only
+  read from `__version__` in `src/kite_cli/__init__.py`; that is the only
   place it lives.
 - `.github/workflows/publish.yml` builds and smoke-tests on every push to
   `main` and on PRs, and publishes to PyPI only on `v*` tags.
@@ -23,7 +23,7 @@ these steps in order. Stop and report if any step fails.
    ```bash
    git fetch --tags origin
    git tag -l 'v*'
-   curl -s https://pypi.org/pypi/muse-cli/json | python3 -c 'import sys,json;print(sorted(json.load(sys.stdin)["releases"]))'
+   curl -s https://pypi.org/pypi/kite-cli/json | python3 -c 'import sys,json;print(sorted(json.load(sys.stdin)["releases"]))'
    ```
 
    Never reuse a version. `v0.1.0` exists as a GitHub-only tag from before
@@ -33,7 +33,7 @@ these steps in order. Stop and report if any step fails.
    with no uncommitted changes (`git status -sb`). Git author identity must
    already be configured; never set it yourself.
 
-3. **Bump the version** in `src/muse_cli/__init__.py`, nothing else.
+3. **Bump the version** in `src/kite_cli/__init__.py`, nothing else.
 
 4. **Build and smoke-test locally:**
 
@@ -43,7 +43,7 @@ these steps in order. Stop and report if any step fails.
    /tmp/muse-release/bin/python -m build
    /tmp/muse-release/bin/twine check --strict dist/*
    /tmp/muse-release/bin/pip install -q dist/*.whl
-   /tmp/muse-release/bin/muse-cli --version   # must print the new version
+   /tmp/muse-release/bin/kite-cli --version   # must print the new version
    rm -rf dist
    ```
 
@@ -60,7 +60,7 @@ these steps in order. Stop and report if any step fails.
 6. **Tag and push the tag.** This is what publishes to PyPI:
 
    ```bash
-   git tag -a vX.Y.Z -m "muse-cli X.Y.Z"
+   git tag -a vX.Y.Z -m "kite-cli X.Y.Z"
    git push origin vX.Y.Z
    gh run list --workflow publish.yml --limit 1
    gh run watch <run-id> --exit-status
@@ -74,10 +74,10 @@ these steps in order. Stop and report if any step fails.
 7. **Verify it is live:**
 
    ```bash
-   curl -s https://pypi.org/pypi/muse-cli/json | python3 -c 'import sys,json;print(json.load(sys.stdin)["info"]["version"])'
+   curl -s https://pypi.org/pypi/kite-cli/json | python3 -c 'import sys,json;print(json.load(sys.stdin)["info"]["version"])'
    rm -rf /tmp/muse-verify && python3 -m venv /tmp/muse-verify
-   /tmp/muse-verify/bin/pip install -q --no-cache-dir muse-cli==X.Y.Z
-   /tmp/muse-verify/bin/muse-cli --version
+   /tmp/muse-verify/bin/pip install -q --no-cache-dir kite-cli==X.Y.Z
+   /tmp/muse-verify/bin/kite-cli --version
    ```
 
    PyPI can take a minute to show a new version; retry before assuming

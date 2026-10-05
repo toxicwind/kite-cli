@@ -1,6 +1,6 @@
 # Estate bridge notes (toxicwind fork)
 
-This fork (`toxicwind/muse-cli`) is the estate's canonical MetaAIVM
+This fork (`toxicwind/kite-cli`) is the estate's canonical MetaAIVM
 agent profile. Upstream is `nikships/muse-cli`; history is preserved.
 
 ## Protocol cross-reference
@@ -8,7 +8,7 @@ agent profile. Upstream is `nikships/muse-cli`; history is preserved.
 The gateway protocol here matches the estate's own
 `MetaAiVmClient` (`toxicwind/metaclaw-runtime`, `src/vm/client.js`):
 
-| muse-cli (`src/muse_cli/gateway.py`) | metaclaw-runtime (`src/vm/client.js`) |
+| kite-cli (`src/kite_cli/gateway.py`) | metaclaw-runtime (`src/vm/client.js`) |
 |---|---|
 | `GATEWAY_HOST = "hatch.metaaivm.com"` | `gatewayHost = "hatch.metaaivm.com"` |
 | `wss://<vm-id>.metaaivm.com/` | same VM addressing |

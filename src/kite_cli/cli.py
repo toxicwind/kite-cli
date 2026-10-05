@@ -1,12 +1,12 @@
-"""muse-cli: CLI for your personal muse.ai agent. No browser needed after cookie export.
+"""kite-cli: CLI for your personal muse.ai agent. No browser needed after cookie export.
 
-One-time setup (also printed by `muse-cli auth export` when a step is missing):
+One-time setup (also printed by `kite-cli auth export` when a step is missing):
   1. npm i -g agent-browser
   2. In Chrome, open chrome://inspect/#remote-debugging and turn remote debugging on.
   3. Open https://muse.ai/ in that same window and log in. Leave the tab open.
-  4. muse-cli auth export   # saves session cookies locally (chmod 600)
+  4. kite-cli auth export   # saves session cookies locally (chmod 600)
 
-Then: muse-cli status | muse-cli threads | muse-cli history | muse-cli send "hello" | ...
+Then: kite-cli status | kite-cli threads | kite-cli history | kite-cli send "hello" | ...
 """
 import argparse
 import json
@@ -19,7 +19,7 @@ from . import __version__
 from .gateway import Gateway, AuthError, GatewayError, load_cookies
 from .update import cmd_update, finish_update_check, start_update_check
 
-CONFIG_DIR = os.path.expanduser("~/.config/muse-cli")
+CONFIG_DIR = os.path.expanduser("~/.config/kite-cli")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 COOKIES_FILE = os.path.join(CONFIG_DIR, "cookies.txt")
 
@@ -48,13 +48,13 @@ def load_config():
 def connect(cfg):
     if not os.path.exists(cfg["cookies_file"]):
         raise AuthError(
-            f"no cookies at {cfg['cookies_file']}. Run `muse-cli auth export` "
+            f"no cookies at {cfg['cookies_file']}. Run `kite-cli auth export` "
             "and follow the steps it prints: turn on Chrome remote debugging at "
             "chrome://inspect/#remote-debugging, open https://muse.ai/ in that "
             "window, then export again.")
     cookies = load_cookies(cfg["cookies_file"])
     if not cookies.strip():
-        raise AuthError(f"cookies file {cfg['cookies_file']} is empty; run `muse-cli auth export`")
+        raise AuthError(f"cookies file {cfg['cookies_file']} is empty; run `kite-cli auth export`")
     return Gateway(cookies, vm_id=cfg.get("vm_id"))
 
 
@@ -137,22 +137,22 @@ def _print_hand_copy():
     print("Copy the login by hand instead:", file=sys.stderr)
     print("  1. In Chrome, open https://muse.ai/ and log in.", file=sys.stderr)
     print("  2. DevTools (F12) → Application → Cookies → https://muse.ai", file=sys.stderr)
-    print("  3. Write one line to ~/.config/muse-cli/cookies.txt", file=sys.stderr)
+    print("  3. Write one line to ~/.config/kite-cli/cookies.txt", file=sys.stderr)
     print("       hatch_sess=VALUE; other_name=other_value", file=sys.stderr)
     print("     hatch_sess is required. Separate cookies with '; '.", file=sys.stderr)
-    print("  4. chmod 600 ~/.config/muse-cli/cookies.txt", file=sys.stderr)
-    print("  5. muse-cli status", file=sys.stderr)
+    print("  4. chmod 600 ~/.config/kite-cli/cookies.txt", file=sys.stderr)
+    print("  5. kite-cli status", file=sys.stderr)
 
 
 def _print_chrome_debug_steps():
-    print("Turn on remote debugging so muse-cli can read the muse.ai cookies.", file=sys.stderr)
+    print("Turn on remote debugging so kite-cli can read the muse.ai cookies.", file=sys.stderr)
     print("Do this in the Chrome window where you already use muse.ai:", file=sys.stderr)
     print(file=sys.stderr)
     print("  1. Open chrome://inspect/#remote-debugging", file=sys.stderr)
     print("  2. Turn on remote debugging", file=sys.stderr)
     print('     ("Allow remote debugging for this browser instance").', file=sys.stderr)
     print("  3. Open https://muse.ai/ and log in. Leave that tab open.", file=sys.stderr)
-    print("  4. Run `muse-cli auth export` again.", file=sys.stderr)
+    print("  4. Run `kite-cli auth export` again.", file=sys.stderr)
     print("     If Chrome asks to allow the connection, click Allow.", file=sys.stderr)
     print("     If this command already failed, run it again after Allow.", file=sys.stderr)
     print(file=sys.stderr)
@@ -166,13 +166,13 @@ def _print_chrome_debug_steps():
 
 
 def _print_need_agent_browser():
-    print("agent-browser is not installed, so muse-cli cannot read Chrome's cookies.", file=sys.stderr)
+    print("agent-browser is not installed, so kite-cli cannot read Chrome's cookies.", file=sys.stderr)
     print(file=sys.stderr)
     print("  1. Install Node.js LTS if `node --version` fails: https://nodejs.org", file=sys.stderr)
     print("  2. Open a new terminal, then:", file=sys.stderr)
     print("       npm i -g agent-browser", file=sys.stderr)
     print("       agent-browser --version", file=sys.stderr)
-    print("  3. Run `muse-cli auth export` again and follow the Chrome steps it prints.", file=sys.stderr)
+    print("  3. Run `kite-cli auth export` again and follow the Chrome steps it prints.", file=sys.stderr)
     print(file=sys.stderr)
     _print_hand_copy()
 
@@ -183,7 +183,7 @@ def _print_export_failure(err):
     if kind == "daemon":
         print("agent-browser is still running from an earlier attempt. Close it, then retry:", file=sys.stderr)
         print("  agent-browser close", file=sys.stderr)
-        print("  muse-cli auth export", file=sys.stderr)
+        print("  kite-cli auth export", file=sys.stderr)
         print(file=sys.stderr)
         _print_chrome_debug_steps()
         return
@@ -193,18 +193,18 @@ def _print_export_failure(err):
     if kind == "tab":
         print("Chrome is connected, but no muse.ai tab is open.", file=sys.stderr)
         print("Open https://muse.ai/, log in, leave that tab open, and run", file=sys.stderr)
-        print("`muse-cli auth export` again.", file=sys.stderr)
+        print("`kite-cli auth export` again.", file=sys.stderr)
         return
     if kind == "connected":
         print("Chrome is connected and the muse.ai tab is open.", file=sys.stderr)
         print("Remote debugging is already on. The cookie read did not come back.", file=sys.stderr)
-        print("Run `muse-cli auth export` again. If Chrome asks, click Allow.", file=sys.stderr)
+        print("Run `kite-cli auth export` again. If Chrome asks, click Allow.", file=sys.stderr)
         print(file=sys.stderr)
         _print_hand_copy()
         return
     print(err, file=sys.stderr)
     print(file=sys.stderr)
-    print("Check both of these, then run `muse-cli auth export` again:", file=sys.stderr)
+    print("Check both of these, then run `kite-cli auth export` again:", file=sys.stderr)
     print("  - chrome://inspect/#remote-debugging has remote debugging on", file=sys.stderr)
     print("  - https://muse.ai/ is open in that same Chrome and you are logged in", file=sys.stderr)
     print(file=sys.stderr)
@@ -269,7 +269,7 @@ def cmd_auth_export(_args):
     if not any(c["name"] == "hatch_sess" for c in jar):
         print("Chrome answered, but the cookies do not include hatch_sess.", file=sys.stderr)
         print("That cookie is set only after you log in at https://muse.ai/.", file=sys.stderr)
-        print("Log in, leave the muse.ai tab open, and run `muse-cli auth export` again.",
+        print("Log in, leave the muse.ai tab open, and run `kite-cli auth export` again.",
               file=sys.stderr)
         print(f"Left {COOKIES_FILE} unchanged.", file=sys.stderr)
         sys.exit(1)
@@ -389,7 +389,7 @@ def cmd_send(args):
         stream_sid = gw._open("chat.stream", body=params)
         if not args.wait:
             out({"sent": True, "stream": stream_sid,
-                 "note": "fire-and-forget; check `muse-cli history` for the reply"})
+                 "note": "fire-and-forget; check `kite-cli history` for the reply"})
             return
 
         # The reply is picked up by polling history, not by watching the
@@ -415,7 +415,7 @@ def cmd_send(args):
         if reply:
             result["reply"] = reply
         else:
-            result["note"] = f"no assistant reply within {args.wait}s; check `muse-cli history`"
+            result["note"] = f"no assistant reply within {args.wait}s; check `kite-cli history`"
         out(result)
     finally:
         gw.close()
@@ -623,14 +623,14 @@ def cmd_raw(args):
 
 
 def main():
-    ap = argparse.ArgumentParser(prog="muse-cli", description="CLI for your personal muse.ai agent")
+    ap = argparse.ArgumentParser(prog="kite-cli", description="CLI for your personal muse.ai agent")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("auth", help="auth helpers"); a = p.add_subparsers(dest="op", required=True)
     export_help = (
         "Copy your muse.ai login out of Google Chrome into\n"
-        "~/.config/muse-cli/cookies.txt (mode 600).\n"
+        "~/.config/kite-cli/cookies.txt (mode 600).\n"
         "\n"
         "Chrome shares those cookies only after remote debugging is on.\n"
         "In the Chrome window you already use for muse.ai:\n"

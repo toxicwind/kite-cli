@@ -1,6 +1,6 @@
-# muse-cli — hatch/ipnext agent profile
+# kite-cli — hatch/ipnext agent profile
 
-This profile makes `muse-cli` first-class for agents running on the hatch
+This profile makes `kite-cli` first-class for agents running on the hatch
 runtime (skills autoloaded) or the ipnext inference substrate. It is the
 non-interactive, JSON-first way to drive a personal Muse AI agent.
 
@@ -20,7 +20,7 @@ No browser after the one-time cookie export. All state is files + env:
 
 ```bash
 # cookies provisioned once (mode 0600), then never touched interactively
-ls -l ~/.config/muse-cli/cookies.txt
+ls -l ~/.config/kite-cli/cookies.txt
 # env overrides (no config file edits needed)
 export MUSE_VM_ID="<vm-id>"
 export MUSE_NODE_ID="<node-id>"   # optional
@@ -29,19 +29,19 @@ export MUSE_NODE_ID="<node-id>"   # optional
 Install (isolated, no repo clone needed):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/toxicwind/muse-cli/main/install.sh | bash
-command -v muse-cli && muse-cli --help >/dev/null && echo cli-ok
+curl -fsSL https://raw.githubusercontent.com/toxicwind/kite-cli/main/install.sh | bash
+command -v kite-cli && kite-cli --help >/dev/null && echo cli-ok
 ```
 
 ## Usage contract for agents
 
 - Every command prints JSON. Parse stdout, never scrape prose.
-- `muse-cli chat send --text "..."` / `muse-cli chat history` / side chats /
-  feed / goals / ideas / sessions — see `muse-cli --help`.
-- Never run `muse-cli auth export` from an agent lane: it needs a live
+- `kite-cli chat send --text "..."` / `kite-cli chat history` / side chats /
+  feed / goals / ideas / sessions — see `kite-cli --help`.
+- Never run `kite-cli auth export` from an agent lane: it needs a live
   Chrome remote-debugging session. Cookies are provisioned, not exported.
 - Cookie rotation: if a call raises AuthError, re-provision
-  `~/.config/muse-cli/cookies.txt` out-of-band and retry once.
+  `~/.config/kite-cli/cookies.txt` out-of-band and retry once.
 
 ## Security notes
 

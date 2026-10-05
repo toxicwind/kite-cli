@@ -1,4 +1,4 @@
-"""Smoke + regression tests for the toxicwind/muse-cli fork.
+"""Smoke + regression tests for the toxicwind/kite-cli fork.
 
 No network, no credentials, no browser: pure source/config checks.
 Run with: python -m pytest tests/ -q
@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "src" / "muse_cli"
+SRC = ROOT / "src" / "kite_cli"
 
 
 def test_gateway_tls_verify_enabled():
@@ -34,10 +34,10 @@ def test_routes_json_method_count():
 
 def test_readme_install_points_at_fork():
     """The fork repoint: install/clone/asset/doc URLs must resolve to
-    toxicwind/muse-cli, never the upstream repo."""
+    toxicwind/kite-cli, never the upstream repo."""
     text = (ROOT / "README.md").read_text()
-    assert "raw.githubusercontent.com/toxicwind/muse-cli/main/install.sh" in text
-    assert "git clone https://github.com/toxicwind/muse-cli.git" in text
+    assert "raw.githubusercontent.com/toxicwind/kite-cli/main/install.sh" in text
+    assert "git clone https://github.com/toxicwind/kite-cli.git" in text
     assert "raw.githubusercontent.com/nikships" not in text
     assert "github.com/nikships/muse-cli/blob" not in text
     assert "github.com/nikships/muse-cli.git" not in text

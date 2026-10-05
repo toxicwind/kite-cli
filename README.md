@@ -1,21 +1,21 @@
 <div align="center">
 
-# muse-cli
+# kite-cli
 
 Talk to your personal muse.ai AI agent from the terminal.
 
-[![PyPI](https://img.shields.io/pypi/v/muse-cli?style=for-the-badge)](https://pypi.org/project/muse-cli/)
-[![Python](https://img.shields.io/pypi/pyversions/muse-cli?style=for-the-badge)](https://pypi.org/project/muse-cli/)
-[![Downloads](https://img.shields.io/pepy/dt/muse-cli?style=for-the-badge)](https://pepy.tech/project/muse-cli)
-[![License: MIT](https://img.shields.io/github/license/toxicwind/muse-cli?style=for-the-badge)](https://github.com/toxicwind/muse-cli/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/toxicwind/muse-cli?style=for-the-badge)](https://github.com/toxicwind/muse-cli/stargazers)
-[![Website](https://img.shields.io/badge/website-live-3fb950?style=for-the-badge)](https://muse-cli-site.web.app)
+[![PyPI](https://img.shields.io/pypi/v/kite-cli?style=for-the-badge)](https://pypi.org/project/kite-cli/)
+[![Python](https://img.shields.io/pypi/pyversions/kite-cli?style=for-the-badge)](https://pypi.org/project/kite-cli/)
+[![Downloads](https://img.shields.io/pepy/dt/kite-cli?style=for-the-badge)](https://pepy.tech/project/kite-cli)
+[![License: MIT](https://img.shields.io/github/license/toxicwind/kite-cli?style=for-the-badge)](https://github.com/toxicwind/kite-cli/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/toxicwind/kite-cli?style=for-the-badge)](https://github.com/toxicwind/kite-cli/stargazers)
+[![Website](https://img.shields.io/badge/website-live-3fb950?style=for-the-badge)](https://kite-cli-site.web.app)
 
-![muse-cli hero](https://raw.githubusercontent.com/toxicwind/muse-cli/main/assets/hero.webp)
+![kite-cli hero](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/hero.webp)
 
 </div>
 
-> **Fork:** this is [`toxicwind/muse-cli`](https://github.com/toxicwind/muse-cli),
+> **Fork:** this is [`toxicwind/kite-cli`](https://github.com/toxicwind/kite-cli),
 > the canonical fork for the hatch/ipnext agent estate. Upstream is
 > [`nikships/muse-cli`](https://github.com/nikships/muse-cli); its history is
 > preserved. Estate additions: the [hatch-agent profile](profiles/hatch-agent.md)
@@ -32,28 +32,28 @@ A command-line client for your personal muse.ai AI agent: chat from the terminal
 
 ## Agents driving agents
 
-Prompt a coding agent, it activates the muse-cli skill and runs read-only
-commands for you. Live session below: a Droid worker runs `muse-cli status`
-and `muse-cli goals`, then reports back.
+Prompt a coding agent, it activates the kite-cli skill and runs read-only
+commands for you. Live session below: a Droid worker runs `kite-cli status`
+and `kite-cli goals`, then reports back.
 
-![Droid agent using muse-cli to check status and goals](https://raw.githubusercontent.com/toxicwind/muse-cli/main/assets/demo-agent.png)
+![Droid agent using kite-cli to check status and goals](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/demo-agent.png)
 
 ## Quick Start
 
 ```bash
-uv tool install muse-cli      # or: pipx install muse-cli   /   pip install muse-cli
+uv tool install kite-cli      # or: pipx install kite-cli   /   pip install kite-cli
 ```
 
-The command is `muse-cli`. The name `muse` belongs to Muse Code on many machines.
+The command is `kite-cli`. The name `muse` belongs to Muse Code on many machines.
 
 Want the agent skill too? The installer sets up the CLI and copies the skill
-to `~/.agents/skills/muse-cli`:
+to `~/.agents/skills/kite-cli`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/toxicwind/muse-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/toxicwind/kite-cli/main/install.sh | bash
 ```
 
-Upgrade with `muse-cli update`. In a terminal it also checks PyPI once a day and, when a newer release exists, prints that command on stderr. It does not upgrade itself. Set `MUSE_NO_UPDATE_CHECK=1` to silence the notice. The check stays quiet when output is piped or `CI` is set. Remove with `uv tool uninstall muse-cli`.
+Upgrade with `kite-cli update`. In a terminal it also checks PyPI once a day and, when a newer release exists, prints that command on stderr. It does not upgrade itself. Set `MUSE_NO_UPDATE_CHECK=1` to silence the notice. The check stays quiet when output is piped or `CI` is set. Remove with `uv tool uninstall kite-cli`.
 
 Logging in is a separate one-time step. Chrome shares its cookies after you
 turn on remote debugging. Follow [Log in once](#log-in-once) before running
@@ -61,8 +61,8 @@ any other command.
 
 ## Log in once
 
-muse-cli borrows the login you already have in Chrome, saves those cookies
-to `~/.config/muse-cli/cookies.txt` (mode `600`, only your user can read it),
+kite-cli borrows the login you already have in Chrome, saves those cookies
+to `~/.config/kite-cli/cookies.txt` (mode `600`, only your user can read it),
 and after that talks to muse.ai directly. Access tokens are fetched fresh
 on every command. When a command later says the cookies expired, repeat this
 section.
@@ -116,7 +116,7 @@ be the one in front when you run the next command.
 ### 4. Save the login
 
 ```bash
-muse-cli auth export
+kite-cli auth export
 ```
 
 Chrome may ask to allow the debugging connection. Click **Allow**. If the
@@ -125,7 +125,7 @@ command already failed, run it again after you click Allow.
 Success looks like this (the count varies):
 
 ```
-saved 12 muse.ai cookies to /home/you/.config/muse-cli/cookies.txt
+saved 12 muse.ai cookies to /home/you/.config/kite-cli/cookies.txt
 ```
 
 The command prints the fix on the failure itself. These are the ones it
@@ -137,12 +137,12 @@ recognizes:
 | No muse.ai tab | Step 3. Open https://muse.ai/ in that same window and leave the tab open. |
 | No `hatch_sess` | The tab is open and you are logged out. Log in, then export again. The cookies file already on disk is left as it was. |
 | `agent-browser` is not installed | Step 1. `node --version`, then `npm i -g agent-browser`, then a new terminal. |
-| Daemon already running | A previous attempt is stuck. `agent-browser close`, then `muse-cli auth export`. |
+| Daemon already running | A previous attempt is stuck. `agent-browser close`, then `kite-cli auth export`. |
 
 ### 5. Check the connection
 
 ```bash
-muse-cli status
+kite-cli status
 ```
 
 You get JSON with your VM id, how many chats you have, the unread count, and
@@ -157,33 +157,33 @@ Use this when you don't have Node, or you don't want remote debugging on.
 3. Copy the cookies onto one line. `hatch_sess` has to be there. Separate cookies with `; ` (semicolon, space). A Netscape cookie jar (what curl writes) and a JSON object such as `{"hatch_sess": "..."}` also work.
 
 ```bash
-mkdir -p ~/.config/muse-cli
-printf '%s\n' 'hatch_sess=the-value-from-devtools; other_cookie=other_value' > ~/.config/muse-cli/cookies.txt
-chmod 600 ~/.config/muse-cli/cookies.txt
-muse-cli status
+mkdir -p ~/.config/kite-cli
+printf '%s\n' 'hatch_sess=the-value-from-devtools; other_cookie=other_value' > ~/.config/kite-cli/cookies.txt
+chmod 600 ~/.config/kite-cli/cookies.txt
+kite-cli status
 ```
 
 ## Usage
 
 ```bash
-muse-cli threads                                  # main chat + side chats
-muse-cli history --limit 5                        # recent messages
-muse-cli history --thread <session-id> --limit 5  # one side chat
-muse-cli send "summarize my unread" --wait 120    # send + wait for the reply
-muse-cli watch --timeout 60                       # tail live agent events
+kite-cli threads                                  # main chat + side chats
+kite-cli history --limit 5                        # recent messages
+kite-cli history --thread <session-id> --limit 5  # one side chat
+kite-cli send "summarize my unread" --wait 120    # send + wait for the reply
+kite-cli watch --timeout 60                       # tail live agent events
 
-muse-cli feed --limit 5
-muse-cli feed-react <unit-id> love
-muse-cli goals
-muse-cli ideas
-muse-cli idea-exec <idea-id>                      # agent acts on the idea
+kite-cli feed --limit 5
+kite-cli feed-react <unit-id> love
+kite-cli goals
+kite-cli ideas
+kite-cli idea-exec <idea-id>                      # agent acts on the idea
 
-muse-cli session-start --title "trip planning"    # new side chat
-muse-cli session-rename <id> "new title"
-muse-cli session-archive <id>                     # also: pin, unpin, unarchive, delete
-muse-cli seen <thread-id>
-muse-cli wake
-muse-cli raw <method> --body '{}'                 # escape hatch: any of 258 gateway methods
+kite-cli session-start --title "trip planning"    # new side chat
+kite-cli session-rename <id> "new title"
+kite-cli session-archive <id>                     # also: pin, unpin, unarchive, delete
+kite-cli seen <thread-id>
+kite-cli wake
+kite-cli raw <method> --body '{}'                 # escape hatch: any of 258 gateway methods
 ```
 
 Every command prints JSON. Your VM is auto-discovered from your session, and a
@@ -192,16 +192,16 @@ random device id is generated on first run.
 Pipe it into other tools:
 
 ```bash
-muse-cli send "what's on my calendar today?" | jq -r .reply.text
+kite-cli send "what's on my calendar today?" | jq -r .reply.text
 ```
 
 ## How it works
 
-![how muse-cli connects](https://raw.githubusercontent.com/toxicwind/muse-cli/main/assets/how-it-works.webp)
+![how kite-cli connects](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/how-it-works.webp)
 
-![muse-cli connection flow](https://raw.githubusercontent.com/toxicwind/muse-cli/main/assets/flow.webp)
+![kite-cli connection flow](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/flow.webp)
 
-See [docs/PROTOCOL.md](https://github.com/toxicwind/muse-cli/blob/main/docs/PROTOCOL.md)
+See [docs/PROTOCOL.md](https://github.com/toxicwind/kite-cli/blob/main/docs/PROTOCOL.md)
 for the full protocol notes, including the method table and the server quirks
 found during reverse engineering.
 
@@ -209,27 +209,27 @@ found during reverse engineering.
 
 | Resource | Description |
 |----------|-------------|
-| [skills/muse-cli/SKILL.md](https://github.com/toxicwind/muse-cli/blob/main/skills/muse-cli/SKILL.md) | Agent skill: install check, auth setup, command reference |
-| [docs/PROTOCOL.md](https://github.com/toxicwind/muse-cli/blob/main/docs/PROTOCOL.md) | Gateway protocol reference: auth chain, Noise transport, framing, method quirks |
-| [routes.json](https://github.com/toxicwind/muse-cli/blob/main/src/muse_cli/routes.json) | All 258 gateway methods with paths and services |
-| [profiles/hatch-agent.md](https://github.com/toxicwind/muse-cli/blob/main/profiles/hatch-agent.md) | Agent profile: non-interactive hatch/ipnext setup, usage contract, security notes |
-| [docs/ESTATE.md](https://github.com/toxicwind/muse-cli/blob/main/docs/ESTATE.md) | Fork notes: protocol cross-reference, harvest provenance |
-| `muse-cli raw --help` | Escape hatch for calling any gateway method directly |
+| [skills/kite-cli/SKILL.md](https://github.com/toxicwind/kite-cli/blob/main/skills/kite-cli/SKILL.md) | Agent skill: install check, auth setup, command reference |
+| [docs/PROTOCOL.md](https://github.com/toxicwind/kite-cli/blob/main/docs/PROTOCOL.md) | Gateway protocol reference: auth chain, Noise transport, framing, method quirks |
+| [routes.json](https://github.com/toxicwind/kite-cli/blob/main/src/kite_cli/routes.json) | All 258 gateway methods with paths and services |
+| [profiles/hatch-agent.md](https://github.com/toxicwind/kite-cli/blob/main/profiles/hatch-agent.md) | Agent profile: non-interactive hatch/ipnext setup, usage contract, security notes |
+| [docs/ESTATE.md](https://github.com/toxicwind/kite-cli/blob/main/docs/ESTATE.md) | Fork notes: protocol cross-reference, harvest provenance |
+| `kite-cli raw --help` | Escape hatch for calling any gateway method directly |
 
 ## Development
 
 ```bash
-git clone https://github.com/toxicwind/muse-cli.git
-cd muse-cli
-uv run muse-cli --help
+git clone https://github.com/toxicwind/kite-cli.git
+cd kite-cli
+uv run kite-cli --help
 ```
 
 ```
-muse-cli/
+kite-cli/
 assets/              README artwork (generated with Muse Image)
 docs/PROTOCOL.md     protocol reference for re-derivation
-skills/muse-cli/     agent skill
-src/muse_cli/
+skills/kite-cli/     agent skill
+src/kite_cli/
   cli.py             argument parsing and all commands
   gateway.py         gateway client (auth, Noise transport, subscriptions)
   routes.json        258 gateway methods extracted from the web client
@@ -242,7 +242,7 @@ pyproject.toml
 ## Setup notes
 
 - Login is the [Log in once](#log-in-once) section above. Cookies live at
-  `~/.config/muse-cli/cookies.txt` (mode 600). Access and gateway tokens are
+  `~/.config/kite-cli/cookies.txt` (mode 600). Access and gateway tokens are
   fetched fresh on every run.
 - `auth export` reads those cookies from Google Chrome through
   [agent-browser](https://github.com/vercel-labs/agent-browser). Chrome has
@@ -256,18 +256,18 @@ pyproject.toml
 Issues and PRs welcome. If the protocol drifts, the most useful contribution
 is a note of which method broke and the new server error text.
 
-<a href="https://github.com/toxicwind/muse-cli/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=toxicwind/muse-cli" />
+<a href="https://github.com/toxicwind/kite-cli/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=toxicwind/kite-cli" />
 </a>
 
 ## License
 
-MIT. See [LICENSE](https://github.com/toxicwind/muse-cli/blob/main/LICENSE).
+MIT. See [LICENSE](https://github.com/toxicwind/kite-cli/blob/main/LICENSE).
 
 ---
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=toxicwind/muse-cli&type=Date)](https://star-history.com/#toxicwind/muse-cli&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=toxicwind/kite-cli&type=Date)](https://star-history.com/#toxicwind/kite-cli&Date)
 
 </div>

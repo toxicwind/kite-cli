@@ -140,7 +140,7 @@ def fetch_session_info(cookies):
         # "vm_resolution_issue":{"kind":"retryable"}}. Not an auth problem,
         # so say so: retry, or wake a known VM id directly.
         raise GatewayError(-1, f"VM unavailable ({info!r}); retry shortly or "
-                               "`MUSE_VM_ID=<id> muse-cli wake`")
+                               "`MUSE_VM_ID=<id> kite-cli wake`")
     return info
 
 

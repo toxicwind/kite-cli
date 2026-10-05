@@ -1,4 +1,4 @@
-"""Tell an interactive user when a newer muse-cli is on PyPI.
+"""Tell an interactive user when a newer kite-cli is on PyPI.
 
 Same shape as `gh` and `uv`: look at most once a day, never on a pipe or in
 CI, never fail the command, and print the upgrade command instead of
@@ -16,8 +16,8 @@ from . import __version__
 
 CHECK_INTERVAL = 24 * 60 * 60
 FAIL_BACKOFF = 60 * 60
-STATE_FILE = os.path.expanduser("~/.config/muse-cli/update.json")
-PYPI_URL = "https://pypi.org/pypi/muse-cli/json"
+STATE_FILE = os.path.expanduser("~/.config/kite-cli/update.json")
+PYPI_URL = "https://pypi.org/pypi/kite-cli/json"
 
 
 def version_key(value):
@@ -41,10 +41,10 @@ def upgrade_argv():
     prefix = os.path.realpath(sys.prefix)
     sep = os.sep
     if f"{sep}uv{sep}tools{sep}" in prefix:
-        return ["uv", "tool", "upgrade", "muse-cli"]
+        return ["uv", "tool", "upgrade", "kite-cli"]
     if f"{sep}pipx{sep}" in prefix:
-        return ["pipx", "upgrade", "muse-cli"]
-    return [sys.executable, "-m", "pip", "install", "-U", "muse-cli"]
+        return ["pipx", "upgrade", "kite-cli"]
+    return [sys.executable, "-m", "pip", "install", "-U", "kite-cli"]
 
 
 def upgrade_command():
@@ -85,7 +85,7 @@ def _save_state(data):
 def _fetch_latest():
     req = urllib.request.Request(
         PYPI_URL,
-        headers={"Accept": "application/json", "User-Agent": f"muse-cli/{__version__}"},
+        headers={"Accept": "application/json", "User-Agent": f"kite-cli/{__version__}"},
     )
     with urllib.request.urlopen(req, timeout=2) as resp:
         payload = json.loads(resp.read().decode())
@@ -133,7 +133,7 @@ def finish_update_check(holder):
     if not is_newer(latest, __version__):
         return
     print(
-        f"\nA new release of muse-cli is available: {__version__} → {latest}\n"
+        f"\nA new release of kite-cli is available: {__version__} → {latest}\n"
         f"To upgrade, run: {upgrade_command()}\n",
         file=sys.stderr,
     )

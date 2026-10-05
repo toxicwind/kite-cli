@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# muse-cli installer: CLI (from PyPI, via uv) + agent skill. No browser needed afterwards.
-# Usage: curl -fsSL https://raw.githubusercontent.com/toxicwind/muse-cli/main/install.sh | bash
+# kite-cli installer: CLI (from PyPI, via uv) + agent skill. No browser needed afterwards.
+# Usage: curl -fsSL https://raw.githubusercontent.com/toxicwind/kite-cli/main/install.sh | bash
 set -u
 
-REPO_URL="${MUSE_CLI_REPO:-https://github.com/toxicwind/muse-cli.git}"
-RAW_URL="${MUSE_CLI_RAW:-https://raw.githubusercontent.com/toxicwind/muse-cli/main}"
+REPO_URL="${MUSE_CLI_REPO:-https://github.com/toxicwind/kite-cli.git}"
+RAW_URL="${MUSE_CLI_RAW:-https://raw.githubusercontent.com/toxicwind/kite-cli/main}"
 SKILL_DIR="${MUSE_CLI_SKILLS:-$HOME/.agents/skills}"
-BIN_NAME="muse-cli"   # 'muse' clashes with Muse Code, don't use it
+BIN_NAME="kite-cli"   # 'muse' clashes with Muse Code, don't use it
 LEGACY_BIN="${MUSE_CLI_BIN:-$HOME/bin}/$BIN_NAME"
 
 fail() { echo "install failed: $1" >&2; exit 1; }
@@ -21,7 +21,7 @@ fi
 command -v uv >/dev/null || fail "uv not found after install"
 
 echo "installing $BIN_NAME with uv"
-if ! uv tool install --upgrade muse-cli; then
+if ! uv tool install --upgrade kite-cli; then
   echo "PyPI install failed, installing from $REPO_URL"
   uv tool install --upgrade "git+$REPO_URL" || fail "uv tool install failed"
 fi
@@ -33,17 +33,17 @@ if [ -f "$LEGACY_BIN" ] && grep -q "cli.py" "$LEGACY_BIN" 2>/dev/null; then
   echo "removed old launcher at $LEGACY_BIN"
 fi
 
-mkdir -p "$SKILL_DIR/muse-cli"
-curl -fsSL "$RAW_URL/skills/muse-cli/SKILL.md" -o "$SKILL_DIR/muse-cli/SKILL.md" \
+mkdir -p "$SKILL_DIR/kite-cli"
+curl -fsSL "$RAW_URL/skills/kite-cli/SKILL.md" -o "$SKILL_DIR/kite-cli/SKILL.md" \
   || fail "skill download failed"
-echo "skill installed at $SKILL_DIR/muse-cli"
+echo "skill installed at $SKILL_DIR/kite-cli"
 
 BIN_DIR="$(uv tool dir --bin 2>/dev/null || echo "$HOME/.local/bin")"
 # uv prints the bin dir with a literal ".." inside; normalize it so the PATH
 # check below compares real paths.
 [ -d "$BIN_DIR" ] && BIN_DIR="$(cd "$BIN_DIR" && pwd)"
 echo
-echo "muse-cli is installed. Log in once before any other command."
+echo "kite-cli is installed. Log in once before any other command."
 echo "Chrome shares its cookies after you turn on remote debugging"
 echo "in the window where you are logged in to muse.ai."
 echo
@@ -79,7 +79,7 @@ echo "  3. $BIN_NAME auth export"
 echo "     If Chrome asks to allow the connection, click Allow."
 echo "     If the command failed before that click, run it again."
 echo "     Success looks like:"
-echo "       saved N muse.ai cookies to ~/.config/muse-cli/cookies.txt"
+echo "       saved N muse.ai cookies to ~/.config/kite-cli/cookies.txt"
 echo "  4. $BIN_NAME status"
 echo
 echo "Stay in that Chrome. A second Chrome started with --remote-debugging-port"
@@ -89,12 +89,12 @@ echo "The export command prints this same fix when it fails. Two other cases:"
 echo "  - \"daemon already running\": agent-browser close && $BIN_NAME auth export"
 echo "  - no Node, or you do not want remote debugging on: copy cookies by hand"
 echo "    DevTools (F12) → Application → Cookies → https://muse.ai"
-echo "    One line in ~/.config/muse-cli/cookies.txt (hatch_sess is required):"
+echo "    One line in ~/.config/kite-cli/cookies.txt (hatch_sess is required):"
 echo "      hatch_sess=VALUE; other_name=other_value"
-echo "    chmod 600 ~/.config/muse-cli/cookies.txt"
+echo "    chmod 600 ~/.config/kite-cli/cookies.txt"
 echo "    $BIN_NAME status"
 echo
-echo "Full write-up: https://github.com/toxicwind/muse-cli#log-in-once"
+echo "Full write-up: https://github.com/toxicwind/kite-cli#log-in-once"
 echo
 echo "Updates: in a terminal, $BIN_NAME notices a newer PyPI release once a day."
 echo "Upgrade with: $BIN_NAME update"

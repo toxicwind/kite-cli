@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "muse-cli"
+name = "kite-cli"
 dynamic = ["version"]
 description = "Command-line client for your personal muse.ai AI agent: chat, automate, and manage side chats, feed, goals, ideas, and sessions from the terminal. No browser needed."
 readme = "README.md"
@@ -15,7 +15,7 @@ keywords = [
     "muse",
     "muse.ai",
     "muse-ai",
-    "muse-cli",
+    "kite-cli",
     "ai",
     "ai-agent",
     "ai-assistant",
@@ -59,25 +59,25 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/toxicwind/muse-cli"
-Documentation = "https://github.com/toxicwind/muse-cli#readme"
-Repository = "https://github.com/toxicwind/muse-cli"
-Issues = "https://github.com/toxicwind/muse-cli/issues"
-Changelog = "https://github.com/toxicwind/muse-cli/releases"
-"Protocol Notes" = "https://github.com/toxicwind/muse-cli/blob/main/docs/PROTOCOL.md"
+Homepage = "https://github.com/toxicwind/kite-cli"
+Documentation = "https://github.com/toxicwind/kite-cli#readme"
+Repository = "https://github.com/toxicwind/kite-cli"
+Issues = "https://github.com/toxicwind/kite-cli/issues"
+Changelog = "https://github.com/toxicwind/kite-cli/releases"
+"Protocol Notes" = "https://github.com/toxicwind/kite-cli/blob/main/docs/PROTOCOL.md"
 
 [project.scripts]
-muse-cli = "muse_cli.cli:main"
+kite-cli = "kite_cli.cli:main"
 
 [tool.hatch.version]
-path = "src/muse_cli/__init__.py"
+path = "src/kite_cli/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/muse_cli"]
+packages = ["src/kite_cli"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/muse_cli",
+    "src/kite_cli",
     "docs",
     "skills",
     "README.md",

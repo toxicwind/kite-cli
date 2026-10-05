@@ -63,7 +63,7 @@ chat / feed / goals / ideas / sessions / ...
 - `/api/session` can return 200 `{"status":"unavailable",
   "vm_resolution_issue":{"kind":"retryable"}}` while the VM restarts. The
   client raises a clean error (not KeyError); retry, or wake a known VM id
-  via `MUSE_VM_ID=<id> muse-cli wake`.
+  via `MUSE_VM_ID=<id> kite-cli wake`.
 - Concurrent `_read_frame` calls from two threads split frames and corrupt
   the stateful Noise decrypt (fatal BAD_DECRYPT). `Gateway` serializes
   receives with a lock as a backstop, but callers must still keep exactly
