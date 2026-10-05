@@ -1,12 +1,12 @@
-# kite-cli — hatch/ipnext agent profile
+# kite-cli — kite agent profile
 
-This profile makes `kite-cli` first-class for agents running on the hatch
+This profile makes `kite-cli` first-class for agents running on the kite
 runtime (skills autoloaded) or the ipnext inference substrate. It is the
 non-interactive, JSON-first way to drive a personal Muse AI agent.
 
 ## Identity
 
-- Profile: `hatch-agent`
+- Profile: `kite-agent`
 - Applies to: agents with the hatch autoloaded-skills identifier or the
   ipnext substrate identifier.
 - Transport: `wss://hatch.metaaivm.com/v1/noise?vm_id=<id>` —

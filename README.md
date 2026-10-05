@@ -16,9 +16,9 @@ Talk to your personal muse.ai AI agent from the terminal.
 </div>
 
 > **Fork:** this is [`toxicwind/kite-cli`](https://github.com/toxicwind/kite-cli),
-> the canonical fork for the hatch/ipnext agent estate. Upstream is
+> the canonical fork for the kite agent estate. Upstream is
 > [`nikships/muse-cli`](https://github.com/nikships/muse-cli); its history is
-> preserved. Estate additions: the [hatch-agent profile](profiles/hatch-agent.md)
+> preserved. Estate additions: the [kite-agent profile](profiles/kite-agent.md)
 > (non-interactive, JSON-first setup for agents) and [estate bridge notes](docs/ESTATE.md).
 
 ## What is this?
@@ -212,7 +212,7 @@ found during reverse engineering.
 | [skills/kite-cli/SKILL.md](https://github.com/toxicwind/kite-cli/blob/main/skills/kite-cli/SKILL.md) | Agent skill: install check, auth setup, command reference |
 | [docs/PROTOCOL.md](https://github.com/toxicwind/kite-cli/blob/main/docs/PROTOCOL.md) | Gateway protocol reference: auth chain, Noise transport, framing, method quirks |
 | [routes.json](https://github.com/toxicwind/kite-cli/blob/main/src/kite_cli/routes.json) | All 258 gateway methods with paths and services |
-| [profiles/hatch-agent.md](https://github.com/toxicwind/kite-cli/blob/main/profiles/hatch-agent.md) | Agent profile: non-interactive hatch/ipnext setup, usage contract, security notes |
+| [profiles/kite-agent.md](https://github.com/toxicwind/kite-cli/blob/main/profiles/kite-agent.md) | Agent profile: non-interactive kite setup, usage contract, security notes |
 | [docs/ESTATE.md](https://github.com/toxicwind/kite-cli/blob/main/docs/ESTATE.md) | Fork notes: protocol cross-reference, harvest provenance |
 | `kite-cli raw --help` | Escape hatch for calling any gateway method directly |
 
