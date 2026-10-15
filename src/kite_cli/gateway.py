@@ -75,17 +75,17 @@ def _hatch_headers(cookies, access_token=None):
     return h
 
 
-def fetch_access_token(cookies):
-    r = rq.post("https://muse.ai/api/auth/check", headers=_hatch_headers(cookies),
+def fetch_access_token(cookies, base_url="https://muse.ai"):
+    r = rq.post(f"{base_url}/api/auth/check", headers=_hatch_headers(cookies),
                 data=b"", impersonate="chrome", timeout=20)
     if r.status_code != 200:
         raise AuthError(f"auth/check -> {r.status_code} {r.text[:120]} (cookies expired? re-export)")
     return r.json()["access_token"]
 
 
-def fetch_hatch_token(cookies, access_token, vm_id):
+def fetch_hatch_token(cookies, access_token, vm_id, base_url="https://muse.ai"):
     r = rq.post(
-        "https://muse.ai/api/hatch/token",
+        f"{base_url}/api/hatch/token",
         headers=_hatch_headers(cookies, access_token),
         json={"vmAddress": f"wss://{vm_id}.metaaivm.com/", "vmName": vm_id},
         impersonate="chrome", timeout=20,
@@ -125,9 +125,9 @@ def load_cookies(path):
     return "; ".join(parts)
 
 
-def fetch_session_info(cookies):
+def fetch_session_info(cookies, base_url="https://muse.ai"):
     """Discover the user's assigned personal VM (id + gateway URL)."""
-    r = rq.get("https://muse.ai/api/session", headers=_hatch_headers(cookies),
+    r = rq.get(f"{base_url}/api/session", headers=_hatch_headers(cookies),
                impersonate="chrome", timeout=20)
     if r.status_code != 200:
         raise AuthError(f"api/session -> {r.status_code} (cookies expired? re-export)")
@@ -142,6 +142,16 @@ def fetch_session_info(cookies):
         raise GatewayError(-1, f"VM unavailable ({info!r}); retry shortly or "
                                "`MUSE_VM_ID=<id> kite-cli wake`")
     return info
+
+
+def wake_vm(cookies, vm_id, access_token=None, base_url="https://muse.ai"):
+    """Wake a known VM id via Meta's hatch VM API."""
+    h = _hatch_headers(cookies, access_token)
+    r = rq.post(f"{base_url}/api/hatch/vm/wake", headers=h,
+                json={"vmAddress": f"wss://{vm_id}.metaaivm.com/", "vmName": vm_id},
+                impersonate="chrome", timeout=20)
+    if r.status_code != 200:
+        raise GatewayError(r.status_code, r.text[:160])
 
 
 class Gateway:
@@ -251,9 +261,14 @@ class Gateway:
         if status is None:
             raise TimeoutError(f"no response for {method}")
         payload = b"".join(chunks)
+        Gateway._raise_for_status(self, status, payload)
+        return payload
+
+    @staticmethod
+    def _raise_for_status(_self, status, payload):
+        """Raise a typed GatewayError for non-2xx gateway responses."""
         if status < 200 or status >= 300:
             raise GatewayError(status, payload[:500].decode("utf-8", "replace"))
-        return payload
 
     def call_json(self, method, path_params=None, body=None, query=None, timeout=30):
         raw = self.request(method, path_params, body, query, timeout)
