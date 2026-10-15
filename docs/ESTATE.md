@@ -6,18 +6,18 @@ agent profile. Upstream is `nikships/muse-cli`; history is preserved.
 ## Protocol cross-reference
 
 The gateway protocol here matches the estate's own
-`MetaAiVmClient` (`toxicwind/metaclaw-runtime`, `src/vm/client.js`):
+`MetaAiVmClient` (`toxicwind/metaclaw-runtime` (estate `projects/metaclaw-runtime`, HEAD `e7c74c5f9`), `src/vm/client.js`):
 
 | kite-cli (`src/kite_cli/gateway.py`) | metaclaw-runtime (`src/vm/client.js`) |
 |---|---|
 | `GATEWAY_HOST = "hatch.metaaivm.com"` | `gatewayHost = "hatch.metaaivm.com"` |
 | `wss://<vm-id>.metaaivm.com/` | same VM addressing |
-| `Noise_XX_25519_AESGCM_SHA256` | `NoiseXXHandshake` |
+| `Noise_XX_25519_AESGCM_SHA256` | `NoiseXXHandshake` (`src/protocol/noise.js`) |
 | protobuf `hatch.noise.*` envelopes | RPC frame pack/unpack |
 
 ## Harvest provenance
 
-Collected 2026-09-30 into `/home/toxic/sovereign/hatch/metaaivm-harvest/`:
+Collected 2026-09-30 into `/home/toxic/kite/kite/metaaivm-harvest/`:
 GitHub-wide `metaaivm` search — 0 repos, 300 code hits (99 unique repos),
 3 issues, 4 PRs. This repo was selected over `kleprevost/muse-mcp`
 (MCP for Muse agents) and `giauphan/toolcase-gateway` (Rust LLM proxy)
