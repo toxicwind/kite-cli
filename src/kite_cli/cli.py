@@ -421,6 +421,38 @@ def cmd_send(args):
         gw.close()
 
 
+def cmd_chat_send(args):
+    """Queue an agent->chat message for delivery via the shim nudge queue.
+
+    The gateway protocol exposes no agent->chat post route (verified across
+    all 258 routes in routes.json), so this writes the entry shape the
+    awrawr-mcp shim_send_chat tool writes. The main agent drains the queue
+    and delivers via chat.send_message.
+    """
+    import re
+    home = os.path.expanduser("~")
+    candidates = [os.path.join(home, "hatch/pollers/nudge-queue"),
+                  os.path.join(home, "estate/hatch/pollers/nudge-queue")]
+    qdir = next((d for d in candidates if os.path.isdir(d)), candidates[0])
+    os.makedirs(qdir, exist_ok=True)
+    lane = re.sub(r"[^A-Za-z0-9_-]", "", args.lane or "") or "kite-cli"
+    ts = time.time()
+    fname = "%s-%d.json" % (lane, int(ts))
+    fpath = os.path.join(qdir, fname)
+    entry = {
+        "lane": lane,
+        "chat_id": args.chat_id,
+        "nudge_text": args.text,
+        "silent_min": 0,
+        "queued_at": ts,
+        "shim": "kite-cli.chat-send",
+        "via": "chat-send",
+    }
+    with open(fpath, "w", encoding="utf-8") as f:
+        json.dump(entry, f)
+    out({"ok": True, "queued": fpath, "chat_id": args.chat_id,
+         "note": "queued for main-agent drain via chat.send_message"})
+
 def cmd_watch(args):
     gw = connect(load_config())
     try:
@@ -666,6 +698,9 @@ def main():
     p.add_argument("text"); p.add_argument("--thread", default=None)
     p.add_argument("--wait", type=int, default=90, help="seconds to wait for reply (0 = don't)")
     p.set_defaults(fn=cmd_send)
+    p = sub.add_parser("chat-send", help="queue an agent->chat message (shim nudge queue)")
+    p.add_argument("--chat-id", required=True); p.add_argument("--text", required=True)
+    p.add_argument("--lane", default="kite-cli"); p.set_defaults(fn=cmd_chat_send)
     p = sub.add_parser("watch", help="tail live agent events")
     p.add_argument("--timeout", type=int, default=60); p.add_argument("--n", type=int, default=50)
     p.add_argument("--all", action="store_true"); p.set_defaults(fn=cmd_watch)
