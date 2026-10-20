@@ -33,17 +33,35 @@ chat / feed / goals / ideas / sessions / ...
   (empty msg3). An attested/RV mode with SNP attestation and HMAC proofs
   exists in the client for other configurations.
 - **Framing:** `NoiseTransportFrame{chunk_id(i64), chunk_index, total_chunks,
-  payload}` protobuf → Noise transport encrypt → one WS binary frame each.
+payload}` protobuf → Noise transport encrypt → one WS binary frame each.
 - **Request:** `ServiceRequest{service, payload =
-  ServiceFrame{stream_id, request =
-  ApplicationRequest{verb, path, headers, body, end_body}}}`. Stream ids start
-  at 1. Services: daemon 0, sentinel 1, vault 2, authd 3.
+ServiceFrame{stream_id, request =
+ApplicationRequest{verb, path, headers, body, end_body}}}`. Stream ids start
+  at 1. Services: daemon 0, sentinel 1, vault 2, authd 3,
+  **ssh_access 4** (noiseOnly, absent from `routes.json`).
 - **Response:** `ServiceResponse{payload = ServiceFrame{... response =
-  ApplicationResponse{status, headers, body, end_body}}}` plus `body_chunk`
+ApplicationResponse{status, headers, body, end_body}}}` plus `body_chunk`
   frames until `end_body`.
 - **Subscriptions** (`chat.subscribe`, `chat.stream`, ...): same envelope, the
   server streams `application/x-ndjson` records in body chunks.
 - **Method table:** `routes.json` (258 methods extracted from the web bundle).
+- **Notary endorsements:** protected routes (e.g. every `ssh_access` method)
+  require `X-Hatch-Notary-Authorization: endorsement.v1…` — a per-route
+  token minted at `POST /api/hatch/ssh-access/tokens {vm_id}` whose
+  restrictions pin `hostname:<vm>.metaaivm.com` and
+  `uri-handle-prefix:<route>` — plus the main `/v1/noise` endorsement from
+  `POST /api/hatch/noise-notary-token` as the WSS `notary_token` query
+  param, and client-matched headers (`x-app-id: hatch-web`,
+  `Accept-Language`, `x-request-id`). Validated live 2026-10-20: the chain
+  passes and reaches the handler (a 501 policy answer, not 401).
+- **ssh_access semantics:** "Meta SSH access" is the Meta Support SSH flow.
+  Operator enable/disable applies only on confidential VMs; on standard VMs
+  support SSH is always enabled. The `/v1/ssh` transport is served per-VM
+  only (`wss://<vm_id>.metaaivm.com/v1/ssh`) — the shared LB 404s it, and
+  the per-VM hostname is NXDOMAIN outside Meta's network.
+- **Edge API:** ~161 HTTPS paths beyond the gateway (session, VM lifecycle,
+  fileserver-read, email, nodes pairing, feed prompt, export). Catalog:
+  [muse-web-bundle-decode](https://github.com/toxicwind/muse-web-bundle-decode).
 
 ## Server quirks learned from live errors
 
@@ -61,7 +79,7 @@ chat / feed / goals / ideas / sessions / ...
   history instead of watching the stream. The `chat.stream` response stream
   itself carries only the send echo, then ends.
 - `/api/session` can return 200 `{"status":"unavailable",
-  "vm_resolution_issue":{"kind":"retryable"}}` while the VM restarts. The
+"vm_resolution_issue":{"kind":"retryable"}}` while the VM restarts. The
   client raises a clean error (not KeyError); retry, or wake a known VM id
   via `MUSE_VM_ID=<id> kite-cli wake`.
 - Concurrent `_read_frame` calls from two threads split frames and corrupt
@@ -69,7 +87,7 @@ chat / feed / goals / ideas / sessions / ...
   receives with a lock as a backstop, but callers must still keep exactly
   one frame consumer at a time (`send` makes sequential unary calls only).
 - `session.start`: `{method: "/api/session/start", params: {origin: "fresh",
-  lifecycle: "persistent", title?}}`.
+lifecycle: "persistent", title?}}`.
 - `session.rename`: flat `{session_id, title}`. pin/unpin/archive/unarchive/
   delete: `{method: "/api/session/<op>", session_id}`.
 - `api.idea-cards.execute`: `{ideaCardId, mode: "full"}` plus path param.

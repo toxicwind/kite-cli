@@ -17,3 +17,6 @@ config.json
 
 # Firebase local cache
 .firebase/
+.envrc
+.env.local
+*.jsonl

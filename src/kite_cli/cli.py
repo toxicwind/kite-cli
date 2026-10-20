@@ -8,9 +8,12 @@ One-time setup (also printed by `kite-cli auth export` when a step is missing):
 
 Then: kite-cli status | kite-cli threads | kite-cli history | kite-cli send "hello" | ...
 """
+
 import argparse
+import base64
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -26,6 +29,7 @@ COOKIES_FILE = os.path.join(CONFIG_DIR, "cookies.txt")
 
 def load_config():
     import secrets
+
     cfg = {}
     if os.path.exists(CONFIG_FILE):
         cfg = json.load(open(CONFIG_FILE))
@@ -51,10 +55,13 @@ def connect(cfg):
             f"no cookies at {cfg['cookies_file']}. Run `kite-cli auth export` "
             "and follow the steps it prints: turn on Chrome remote debugging at "
             "chrome://inspect/#remote-debugging, open https://muse.ai/ in that "
-            "window, then export again.")
+            "window, then export again."
+        )
     cookies = load_cookies(cfg["cookies_file"])
     if not cookies.strip():
-        raise AuthError(f"cookies file {cfg['cookies_file']} is empty; run `kite-cli auth export`")
+        raise AuthError(
+            f"cookies file {cfg['cookies_file']} is empty; run `kite-cli auth export`"
+        )
     return Gateway(cookies, vm_id=cfg.get("vm_id"))
 
 
@@ -114,6 +121,7 @@ def _browser_run(argv, require_json=True):
     exit 0 anyway, some exit non-zero; trust the envelope when it is there.
     """
     import subprocess
+
     r = subprocess.run(argv, capture_output=True, text=True)
     return _interpret_browser(r.returncode, r.stdout, r.stderr, require_json)
 
@@ -122,13 +130,21 @@ def _export_error_kind(err):
     e = (err or "").lower()
     if "daemon already running" in e:
         return "daemon"
-    if ("no running chrome" in e or "remote-debugging" in e
-            or "auto-launch failed" in e or "auto-connect" in e):
+    if (
+        "no running chrome" in e
+        or "remote-debugging" in e
+        or "auto-launch failed" in e
+        or "auto-connect" in e
+    ):
         return "debug"
     if err == "no muse.ai tab open in Chrome":
         return "tab"
     # A page title from agent-browser means Chrome already answered.
-    if "https://muse.ai" in e or e.startswith("✓") or e.startswith("connected to chrome"):
+    if (
+        "https://muse.ai" in e
+        or e.startswith("✓")
+        or e.startswith("connected to chrome")
+    ):
         return "connected"
     return "other"
 
@@ -136,7 +152,9 @@ def _export_error_kind(err):
 def _print_hand_copy():
     print("Copy the login by hand instead:", file=sys.stderr)
     print("  1. In Chrome, open https://muse.ai/ and log in.", file=sys.stderr)
-    print("  2. DevTools (F12) → Application → Cookies → https://muse.ai", file=sys.stderr)
+    print(
+        "  2. DevTools (F12) → Application → Cookies → https://muse.ai", file=sys.stderr
+    )
     print("  3. Write one line to ~/.config/kite-cli/cookies.txt", file=sys.stderr)
     print("       hatch_sess=VALUE; other_name=other_value", file=sys.stderr)
     print("     hatch_sess is required. Separate cookies with '; '.", file=sys.stderr)
@@ -145,19 +163,32 @@ def _print_hand_copy():
 
 
 def _print_chrome_debug_steps():
-    print("Turn on remote debugging so kite-cli can read the muse.ai cookies.", file=sys.stderr)
-    print("Do this in the Chrome window where you already use muse.ai:", file=sys.stderr)
+    print(
+        "Turn on remote debugging so kite-cli can read the muse.ai cookies.",
+        file=sys.stderr,
+    )
+    print(
+        "Do this in the Chrome window where you already use muse.ai:", file=sys.stderr
+    )
     print(file=sys.stderr)
     print("  1. Open chrome://inspect/#remote-debugging", file=sys.stderr)
     print("  2. Turn on remote debugging", file=sys.stderr)
     print('     ("Allow remote debugging for this browser instance").', file=sys.stderr)
-    print("  3. Open https://muse.ai/ and log in. Leave that tab open.", file=sys.stderr)
+    print(
+        "  3. Open https://muse.ai/ and log in. Leave that tab open.", file=sys.stderr
+    )
     print("  4. Run `kite-cli auth export` again.", file=sys.stderr)
     print("     If Chrome asks to allow the connection, click Allow.", file=sys.stderr)
-    print("     If this command already failed, run it again after Allow.", file=sys.stderr)
+    print(
+        "     If this command already failed, run it again after Allow.",
+        file=sys.stderr,
+    )
     print(file=sys.stderr)
     print("Stay in that same window. A second Chrome started with", file=sys.stderr)
-    print("--remote-debugging-port is another profile and has no muse.ai login.", file=sys.stderr)
+    print(
+        "--remote-debugging-port is another profile and has no muse.ai login.",
+        file=sys.stderr,
+    )
     print(file=sys.stderr)
     print("Success looks like:", file=sys.stderr)
     print(f"  saved N muse.ai cookies to {COOKIES_FILE}", file=sys.stderr)
@@ -166,13 +197,22 @@ def _print_chrome_debug_steps():
 
 
 def _print_need_agent_browser():
-    print("agent-browser is not installed, so kite-cli cannot read Chrome's cookies.", file=sys.stderr)
+    print(
+        "agent-browser is not installed, so kite-cli cannot read Chrome's cookies.",
+        file=sys.stderr,
+    )
     print(file=sys.stderr)
-    print("  1. Install Node.js LTS if `node --version` fails: https://nodejs.org", file=sys.stderr)
+    print(
+        "  1. Install Node.js LTS if `node --version` fails: https://nodejs.org",
+        file=sys.stderr,
+    )
     print("  2. Open a new terminal, then:", file=sys.stderr)
     print("       npm i -g agent-browser", file=sys.stderr)
     print("       agent-browser --version", file=sys.stderr)
-    print("  3. Run `kite-cli auth export` again and follow the Chrome steps it prints.", file=sys.stderr)
+    print(
+        "  3. Run `kite-cli auth export` again and follow the Chrome steps it prints.",
+        file=sys.stderr,
+    )
     print(file=sys.stderr)
     _print_hand_copy()
 
@@ -181,7 +221,10 @@ def _print_export_failure(err):
     kind = _export_error_kind(err)
     print("cookie export failed.", file=sys.stderr)
     if kind == "daemon":
-        print("agent-browser is still running from an earlier attempt. Close it, then retry:", file=sys.stderr)
+        print(
+            "agent-browser is still running from an earlier attempt. Close it, then retry:",
+            file=sys.stderr,
+        )
         print("  agent-browser close", file=sys.stderr)
         print("  kite-cli auth export", file=sys.stderr)
         print(file=sys.stderr)
@@ -192,21 +235,38 @@ def _print_export_failure(err):
         return
     if kind == "tab":
         print("Chrome is connected, but no muse.ai tab is open.", file=sys.stderr)
-        print("Open https://muse.ai/, log in, leave that tab open, and run", file=sys.stderr)
+        print(
+            "Open https://muse.ai/, log in, leave that tab open, and run",
+            file=sys.stderr,
+        )
         print("`kite-cli auth export` again.", file=sys.stderr)
         return
     if kind == "connected":
         print("Chrome is connected and the muse.ai tab is open.", file=sys.stderr)
-        print("Remote debugging is already on. The cookie read did not come back.", file=sys.stderr)
-        print("Run `kite-cli auth export` again. If Chrome asks, click Allow.", file=sys.stderr)
+        print(
+            "Remote debugging is already on. The cookie read did not come back.",
+            file=sys.stderr,
+        )
+        print(
+            "Run `kite-cli auth export` again. If Chrome asks, click Allow.",
+            file=sys.stderr,
+        )
         print(file=sys.stderr)
         _print_hand_copy()
         return
     print(err, file=sys.stderr)
     print(file=sys.stderr)
-    print("Check both of these, then run `kite-cli auth export` again:", file=sys.stderr)
-    print("  - chrome://inspect/#remote-debugging has remote debugging on", file=sys.stderr)
-    print("  - https://muse.ai/ is open in that same Chrome and you are logged in", file=sys.stderr)
+    print(
+        "Check both of these, then run `kite-cli auth export` again:", file=sys.stderr
+    )
+    print(
+        "  - chrome://inspect/#remote-debugging has remote debugging on",
+        file=sys.stderr,
+    )
+    print(
+        "  - https://muse.ai/ is open in that same Chrome and you are logged in",
+        file=sys.stderr,
+    )
     print(file=sys.stderr)
     _print_hand_copy()
 
@@ -225,13 +285,20 @@ def _browser_cookies():
             # else the export comes back empty even when logged in.
             data = _browser_run(base + ["tab", "list", "--json"])
             tabs = data.get("tabs", []) if isinstance(data, dict) else []
-            muse_tabs = [t for t in tabs
-                         if isinstance(t, dict) and "muse.ai" in (t.get("url") or "")
-                         and (t.get("id") or t.get("tabId"))]
+            muse_tabs = [
+                t
+                for t in tabs
+                if isinstance(t, dict)
+                and "muse.ai" in (t.get("url") or "")
+                and (t.get("id") or t.get("tabId"))
+            ]
             if not muse_tabs:
                 return None, "no muse.ai tab open in Chrome"
-            tab_id = (muse_tabs[0].get("id") or muse_tabs[0].get("tabId")
-                      or muse_tabs[0].get("targetId"))
+            tab_id = (
+                muse_tabs[0].get("id")
+                or muse_tabs[0].get("tabId")
+                or muse_tabs[0].get("targetId")
+            )
             # Switching tabs prints a human confirmation unless --json is set.
             # Exit 0 is success either way; the cookies read is the next call.
             _browser_run(base + ["tab", tab_id, "--json"], require_json=False)
@@ -244,7 +311,12 @@ def _browser_cookies():
                     if isinstance(data.get(key), list):
                         raw = data[key]
                         break
-            jar = [c for c in raw if isinstance(c, dict) and "muse.ai" in (c.get("domain") or c.get("url") or "")]
+            jar = [
+                c
+                for c in raw
+                if isinstance(c, dict)
+                and "muse.ai" in (c.get("domain") or c.get("url") or "")
+            ]
             return jar, None
         except RuntimeError as e:
             last_err = str(e)
@@ -267,20 +339,36 @@ def cmd_auth_export(_args):
         sys.exit(1)
     # Never clobber a working login with an empty or logged-out jar.
     if not any(c["name"] == "hatch_sess" for c in jar):
-        print("Chrome answered, but the cookies do not include hatch_sess.", file=sys.stderr)
-        print("That cookie is set only after you log in at https://muse.ai/.", file=sys.stderr)
-        print("Log in, leave the muse.ai tab open, and run `kite-cli auth export` again.",
-              file=sys.stderr)
+        print(
+            "Chrome answered, but the cookies do not include hatch_sess.",
+            file=sys.stderr,
+        )
+        print(
+            "That cookie is set only after you log in at https://muse.ai/.",
+            file=sys.stderr,
+        )
+        print(
+            "Log in, leave the muse.ai tab open, and run `kite-cli auth export` again.",
+            file=sys.stderr,
+        )
         print(f"Left {COOKIES_FILE} unchanged.", file=sys.stderr)
         sys.exit(1)
     lines = ["# Netscape HTTP Cookie File"]
     for c in jar:
         dom = c["domain"]
-        lines.append("\t".join([
-            dom, "TRUE" if dom.startswith(".") else "FALSE", c.get("path", "/"),
-            "TRUE" if c.get("secure") else "FALSE",
-            str(int(c.get("expires", 0) or 0)), c["name"], c["value"],
-        ]))
+        lines.append(
+            "\t".join(
+                [
+                    dom,
+                    "TRUE" if dom.startswith(".") else "FALSE",
+                    c.get("path", "/"),
+                    "TRUE" if c.get("secure") else "FALSE",
+                    str(int(c.get("expires", 0) or 0)),
+                    c["name"],
+                    c["value"],
+                ]
+            )
+        )
     if os.path.exists(COOKIES_FILE):
         os.replace(COOKIES_FILE, COOKIES_FILE + ".bak")
     with open(COOKIES_FILE, "w") as fh:
@@ -295,8 +383,14 @@ def cmd_status(_args):
         sess = gw.call_json("sessions.list")
         unread = gw.call_json("chat.unread_count")
         ident = gw.call_json("identity")
-        out({"vm_id": gw.vm_id, "sessions": len(sess.get("sessions", [])),
-             "unread": unread, "identity": ident})
+        out(
+            {
+                "vm_id": gw.vm_id,
+                "sessions": len(sess.get("sessions", [])),
+                "unread": unread,
+                "identity": ident,
+            }
+        )
     finally:
         gw.close()
 
@@ -305,14 +399,19 @@ def cmd_threads(args):
     gw = connect(load_config())
     try:
         d = gw.call_json("sessions.list")
-        rows = [{
-            "session_id": s.get("session_id"),
-            "title": s.get("title"),
-            "thread": s.get("is_thread"),
-            "pinned": s.get("pinned"),
-            "archived": s.get("archived"),
-            "updated": time.strftime("%Y-%m-%d %H:%M", time.localtime(s.get("updated_at_ms", 0) / 1000)),
-        } for s in d.get("sessions", [])]
+        rows = [
+            {
+                "session_id": s.get("session_id"),
+                "title": s.get("title"),
+                "thread": s.get("is_thread"),
+                "pinned": s.get("pinned"),
+                "archived": s.get("archived"),
+                "updated": time.strftime(
+                    "%Y-%m-%d %H:%M", time.localtime(s.get("updated_at_ms", 0) / 1000)
+                ),
+            }
+            for s in d.get("sessions", [])
+        ]
         if args.archived is False:
             rows = [r for r in rows if not r["archived"]]
         out(rows)
@@ -324,9 +423,12 @@ def fmt_event(e):
     p = e.get("payload", {}) if isinstance(e.get("payload"), dict) else {}
     role = p.get("role") or e.get("event_name")
     text = p.get("display_text") or p.get("content") or ""
-    return {"seq": e.get("seq"), "role": role,
-            "message_id": p.get("message_id") or e.get("message_id"),
-            "text": text}
+    return {
+        "seq": e.get("seq"),
+        "role": role,
+        "message_id": p.get("message_id") or e.get("message_id"),
+        "text": text,
+    }
 
 
 def cmd_history(args):
@@ -340,8 +442,14 @@ def cmd_history(args):
         if args.raw:
             out(d)
             return
-        out([fmt_event(e) for e in events if (e.get("payload", {}) or {}).get("display_text")
-             or (e.get("payload", {}) or {}).get("content")])
+        out(
+            [
+                fmt_event(e)
+                for e in events
+                if (e.get("payload", {}) or {}).get("display_text")
+                or (e.get("payload", {}) or {}).get("content")
+            ]
+        )
     finally:
         gw.close()
 
@@ -358,7 +466,7 @@ def is_reply(ev, baseline):
     if (ev.get("seq") or 0) <= baseline:
         return False
     p = ev.get("payload", {}) if isinstance(ev.get("payload"), dict) else {}
-    if (ev.get("reply_to_message_id") or p.get("reply_to_message_id")):
+    if ev.get("reply_to_message_id") or p.get("reply_to_message_id"):
         return False
     if not (p.get("display_text") or p.get("content")):
         return False
@@ -371,8 +479,11 @@ def cmd_send(args):
     cfg = load_config()
     gw = connect(cfg)
     try:
-        params = {"items": [{"type": "text", "text": args.text}],
-                  "node_id": cfg["node_id"], "capabilities": {}}
+        params = {
+            "items": [{"type": "text", "text": args.text}],
+            "node_id": cfg["node_id"],
+            "capabilities": {},
+        }
         if args.thread:
             params["session_id"] = args.thread
         # chat.history without session_id reads the main chat; with it, the
@@ -388,8 +499,13 @@ def cmd_send(args):
             pass
         stream_sid = gw._open("chat.stream", body=params)
         if not args.wait:
-            out({"sent": True, "stream": stream_sid,
-                 "note": "fire-and-forget; check `kite-cli history` for the reply"})
+            out(
+                {
+                    "sent": True,
+                    "stream": stream_sid,
+                    "note": "fire-and-forget; check `kite-cli history` for the reply",
+                }
+            )
             return
 
         # The reply is picked up by polling history, not by watching the
@@ -415,7 +531,9 @@ def cmd_send(args):
         if reply:
             result["reply"] = reply
         else:
-            result["note"] = f"no assistant reply within {args.wait}s; check `kite-cli history`"
+            result["note"] = (
+                f"no assistant reply within {args.wait}s; check `kite-cli history`"
+            )
         out(result)
     finally:
         gw.close()
@@ -430,9 +548,12 @@ def cmd_chat_send(args):
     and delivers via chat.send_message.
     """
     import re
+
     home = os.path.expanduser("~")
-    candidates = [os.path.join(home, "hatch/pollers/nudge-queue"),
-                  os.path.join(home, "estate/hatch/pollers/nudge-queue")]
+    candidates = [
+        os.path.join(home, "hatch/pollers/nudge-queue"),
+        os.path.join(home, "estate/hatch/pollers/nudge-queue"),
+    ]
     qdir = next((d for d in candidates if os.path.isdir(d)), candidates[0])
     os.makedirs(qdir, exist_ok=True)
     lane = re.sub(r"[^A-Za-z0-9_-]", "", args.lane or "") or "kite-cli"
@@ -450,15 +571,330 @@ def cmd_chat_send(args):
     }
     with open(fpath, "w", encoding="utf-8") as f:
         json.dump(entry, f)
-    out({"ok": True, "queued": fpath, "chat_id": args.chat_id,
-         "note": "queued for main-agent drain via chat.send_message"})
+    out(
+        {
+            "ok": True,
+            "queued": fpath,
+            "chat_id": args.chat_id,
+            "note": "queued for main-agent drain via chat.send_message",
+        }
+    )
+
+
+# -- custom endpoints: cell fs, activity, cron files ------------------------
+#
+# The gateway's fs.* routes are jailed to the agent's cell home and accept
+# relative paths only. cron.d markdown files are executable endpoints: the
+# cell daemon watches the tree, parses the YAML frontmatter, and runs the
+# body on schedule (tasks.list surfaces them). Writing one is a direct
+# agent-contact channel that does not depend on the chat turn engine.
+
+CRON_KINDS = (
+    "runonce",
+    "secondly",
+    "minutely",
+    "hourly",
+    "daily",
+    "weekly",
+    "monthly",
+    "yearly",
+)
+INTERVAL_UNITS = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+
+
+def _fs_write_cell(gw, path, data, append=False, overwrite=True, create_parent=True):
+    return gw.call_json(
+        "fs.write",
+        body={
+            "path": path,
+            "offset": 0,
+            "data_base64": base64.b64encode(data).decode(),
+            "overwrite": overwrite,
+            "append": append,
+            "create_parent": create_parent,
+            "eof": True,
+        },
+    )
+
+
+def _fs_read_all(gw, path, chunk=262144):
+    data = bytearray()
+    offset = 0
+    while True:
+        r = gw.call_json("fs.read", body={"path": path, "offset": offset, "len": chunk})
+        data += base64.b64decode(r.get("data_base64") or "")
+        if r.get("eof"):
+            return bytes(data)
+        offset = r.get("offset", 0) + r.get("len", len(data))
+
+
+def _cell_write(args):
+    data = open(args.file, "rb").read() if args.file else (args.data or "").encode()
+    gw = connect(load_config())
+    try:
+        out(
+            _fs_write_cell(
+                gw,
+                args.path,
+                data,
+                append=args.append,
+                overwrite=not args.no_overwrite,
+                create_parent=not args.no_create_parent,
+            )
+        )
+    finally:
+        gw.close()
+
+
+def _cell_read(args):
+    gw = connect(load_config())
+    try:
+        data = _fs_read_all(gw, args.path, chunk=args.len)
+        if args.raw:
+            out(
+                {
+                    "path": args.path,
+                    "len": len(data),
+                    "data_base64": base64.b64encode(data).decode(),
+                }
+            )
+        else:
+            sys.stdout.buffer.write(data)
+            if data and not data.endswith(b"\n"):
+                sys.stdout.write("\n")
+    finally:
+        gw.close()
+
+
+def _cell_list(args):
+    gw = connect(load_config())
+    try:
+        d = gw.call_json("fs.list", body={"path": args.path})
+        if args.raw:
+            out(d)
+            return
+        rows = []
+        for e in d.get("entries", []):
+            row = {"name": e.get("name"), "type": e.get("type")}
+            for k in ("size", "modifiedAt"):
+                if e.get(k) is not None:
+                    row[k] = e[k]
+            rows.append(row)
+        out(rows)
+    finally:
+        gw.close()
+
+
+def _cell_stat(args):
+    gw = connect(load_config())
+    try:
+        out(gw.call_json("fs.stat", body={"path": args.path}))
+    finally:
+        gw.close()
+
+
+def _cell_mkdir(args):
+    gw = connect(load_config())
+    try:
+        out(
+            gw.call_json(
+                "fs.mkdir", body={"path": args.path, "recursive": args.recursive}
+            )
+        )
+    finally:
+        gw.close()
+
+
+def _cell_mv(args):
+    gw = connect(load_config())
+    try:
+        out(
+            gw.call_json(
+                "fs.rename",
+                body={
+                    "source": args.source,
+                    "destination": args.destination,
+                    "create_parent": args.create_parent,
+                },
+            )
+        )
+    finally:
+        gw.close()
+
+
+def _cell_rm(args):
+    gw = connect(load_config())
+    try:
+        out(
+            gw.call_json(
+                "fs.delete", body={"path": args.path, "recursive": args.recursive}
+            )
+        )
+    finally:
+        gw.close()
+
+
+def cmd_cell(args):
+    ops = {
+        "list": _cell_list,
+        "read": _cell_read,
+        "write": _cell_write,
+        "stat": _cell_stat,
+        "mkdir": _cell_mkdir,
+        "mv": _cell_mv,
+        "rm": _cell_rm,
+    }
+    ops[args.op](args)
+
+
+def cmd_activity(args):
+    gw = connect(load_config())
+    try:
+        d = gw.call_json("activity.list")
+        if args.raw:
+            out(d)
+            return
+        rows = []
+        for day in d.get("days", []):
+            if args.day and day.get("date") != args.day:
+                continue
+            for a in day.get("activities", []):
+                rows.append(
+                    {
+                        "timestamp": a.get("timestamp"),
+                        "type": a.get("type"),
+                        "title": a.get("title") or a.get("status_title"),
+                        "message_id": a.get("message_id"),
+                        "task_label": a.get("task_label"),
+                    }
+                )
+        out(rows[: args.limit] if args.limit else rows)
+    finally:
+        gw.close()
+
+
+def _cron_path(kind, spec, cron_id):
+    return "workspace/cron.d/%s/%s__%s@%s.md" % (kind, cron_id, kind, spec)
+
+
+def cmd_cron_list(_args):
+    gw = connect(load_config())
+    try:
+        d = gw.call_json("tasks.list")
+        rows = [
+            {
+                "id": s.get("id"),
+                "title": s.get("title"),
+                "enabled": s.get("enabled"),
+                "mode": s.get("mode"),
+                "target": s.get("execution_target"),
+                "schedule": s.get("schedule_key"),
+                "next_run_utc": s.get("next_run_at_utc"),
+                "path": s.get("path"),
+            }
+            for s in d.get("schedules", [])
+        ]
+        out(rows)
+    finally:
+        gw.close()
+
+
+def cmd_cron_put(args):
+    spec = args.spec
+    kind = args.kind
+    if kind == "runonce":
+        if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", spec):
+            print("runonce --spec must be YYYY-MM-DDTHH:MM:SS (UTC)", file=sys.stderr)
+            sys.exit(2)
+    elif kind == "interval":
+        m = re.match(r"^(\d+)([smhd])$", spec)
+        if not m:
+            print("interval --spec must be like 30s, 5m, 24h, 7d", file=sys.stderr)
+            sys.exit(2)
+        spec = "%s%s" % (int(m.group(1)), m.group(2))
+    cron_id = re.sub(r"[^A-Za-z0-9_-]", "-", args.id).strip("-")
+    if not cron_id:
+        print("bad --id", file=sys.stderr)
+        sys.exit(2)
+    if args.file:
+        with open(args.file, "r", encoding="utf-8") as fh:
+            body_text = fh.read()
+    elif args.data:
+        body_text = args.data
+    else:
+        print("cron put needs --file F or --data TEXT", file=sys.stderr)
+        sys.exit(2)
+    lines = [
+        "---",
+        "id: %s" % cron_id,
+        "title: %s" % (args.title or cron_id),
+        "enabled: true",
+        "mode: task",
+        "schedule:",
+        "  kind: %s" % kind,
+    ]
+    if kind == "runonce":
+        lines += ["  timezone: %s" % args.timezone, "  at: %s" % spec]
+    elif kind == "interval":
+        n, unit = spec[:-1], spec[-1]
+        lines += ["  interval_seconds: %d" % (int(n) * INTERVAL_UNITS[unit])]
+    if args.chat:
+        lines += ["delivery:", "  - chat_id: %s" % args.chat]
+    text = "\n".join(lines) + "\n---\n" + body_text
+    if not text.endswith("\n"):
+        text += "\n"
+    path = _cron_path(kind, spec, cron_id)
+    gw = connect(load_config())
+    try:
+        r = _fs_write_cell(gw, path, text.encode())
+        out(
+            {
+                "ok": True,
+                "endpoint": path,
+                "schedule": "%s@%s" % (kind, spec),
+                "bytes": len(text),
+                "write": r,
+                "note": "verify with: kite-cli cron list",
+            }
+        )
+    finally:
+        gw.close()
+
+
+def cmd_cron_rm(args):
+    gw = connect(load_config())
+    try:
+        d = gw.call_json("tasks.list")
+        match = None
+        for s in d.get("schedules", []):
+            if s.get("id") == args.id:
+                match = s
+                break
+        if not match or not match.get("path"):
+            out({"ok": False, "error": "no schedule with id '%s'" % args.id})
+            return
+        cell_path = re.sub(r"^/?(home/hatch/)?", "", match["path"])
+        r = gw.call_json("fs.delete", body={"path": cell_path, "recursive": False})
+        out({"ok": True, "removed": match["path"], "delete": r})
+    finally:
+        gw.close()
+
+
+def cmd_cron(args):
+    ops = {"list": cmd_cron_list, "put": cmd_cron_put, "rm": cmd_cron_rm}
+    ops[args.op](args)
+
 
 def cmd_watch(args):
     gw = connect(load_config())
     try:
-        recs = gw.subscribe_json("chat.subscribe", body={"capabilities": {}},
-                                 max_records=args.n, idle_timeout=8,
-                                 overall_timeout=args.timeout)
+        recs = gw.subscribe_json(
+            "chat.subscribe",
+            body={"capabilities": {}},
+            max_records=args.n,
+            idle_timeout=8,
+            overall_timeout=args.timeout,
+        )
         for ev in recs:
             et = ev.get("event", ev.get("type"))
             if et in ("agent.status",) and not args.all:
@@ -476,18 +912,25 @@ def cmd_watch(args):
 def cmd_feed(args):
     gw = connect(load_config())
     try:
-        d = gw.call_json("feed.list", query={"limit": args.limit} if args.limit else None)
+        d = gw.call_json(
+            "feed.list", query={"limit": args.limit} if args.limit else None
+        )
         if args.raw:
-            out(d); return
+            out(d)
+            return
         rows = []
         for day in d.get("days", []):
             for ed in day.get("editions", []):
                 for u in ed.get("units", []):
-                    rows.append({"id": u.get("unit_id"),
-                                 "title": u.get("title"),
-                                 "date": day.get("local_date"),
-                                 "edition": ed.get("kind")})
-        out(rows[:args.limit] if args.limit else rows)
+                    rows.append(
+                        {
+                            "id": u.get("unit_id"),
+                            "title": u.get("title"),
+                            "date": day.get("local_date"),
+                            "edition": ed.get("kind"),
+                        }
+                    )
+        out(rows[: args.limit] if args.limit else rows)
     finally:
         gw.close()
 
@@ -503,8 +946,13 @@ def cmd_feed_status(_args):
 def cmd_feed_react(args):
     gw = connect(load_config())
     try:
-        out(gw.call_json("feed.unit.reaction", path_params={"unit_id": args.unit},
-                         body={"reaction": args.reaction}))
+        out(
+            gw.call_json(
+                "feed.unit.reaction",
+                path_params={"unit_id": args.unit},
+                body={"reaction": args.reaction},
+            )
+        )
     finally:
         gw.close()
 
@@ -521,9 +969,17 @@ def cmd_goals(_args):
     gw = connect(load_config())
     try:
         d = gw.call_json("goals.list")
-        out([{"id": g.get("id") or g.get("goal_id"), "title": g.get("title"),
-              "status": g.get("status"), "subtitle": g.get("subtitle")}
-             for g in d.get("goals", [])])
+        out(
+            [
+                {
+                    "id": g.get("id") or g.get("goal_id"),
+                    "title": g.get("title"),
+                    "status": g.get("status"),
+                    "subtitle": g.get("subtitle"),
+                }
+                for g in d.get("goals", [])
+            ]
+        )
     finally:
         gw.close()
 
@@ -543,8 +999,13 @@ def cmd_ideas(_args):
         rows = []
         for s in d.get("sections", []):
             for c in s.get("cards", s.get("ideas", [])):
-                rows.append({"id": c.get("id") or c.get("ideaCardId"),
-                             "title": c.get("title"), "section": s.get("title")})
+                rows.append(
+                    {
+                        "id": c.get("id") or c.get("ideaCardId"),
+                        "title": c.get("title"),
+                        "section": s.get("title"),
+                    }
+                )
         out(rows)
     finally:
         gw.close()
@@ -564,7 +1025,11 @@ def cmd_idea_exec(args):
         body = {"ideaCardId": args.id, "mode": "full"}
         if args.thread:
             body["session_id"] = args.thread
-        out(gw.call_json("api.idea-cards.execute", path_params={"ideaCardId": args.id}, body=body))
+        out(
+            gw.call_json(
+                "api.idea-cards.execute", path_params={"ideaCardId": args.id}, body=body
+            )
+        )
     finally:
         gw.close()
 
@@ -591,8 +1056,11 @@ def cmd_session_start(args):
         params = {"origin": "fresh", "lifecycle": "persistent"}
         if args.title:
             params["title"] = args.title
-        out(gw.call_json("session.start",
-                         body={"method": "/api/session/start", "params": params}))
+        out(
+            gw.call_json(
+                "session.start", body={"method": "/api/session/start", "params": params}
+            )
+        )
     finally:
         gw.close()
 
@@ -608,6 +1076,7 @@ def cmd_session_op(kind):
             out(gw.call_json(f"session.{kind}", body=body))
         finally:
             gw.close()
+
     return run
 
 
@@ -615,20 +1084,28 @@ def cmd_wake(_args):
     cfg = load_config()
     from .gateway import _hatch_headers, fetch_access_token, fetch_session_info
     from curl_cffi import requests as rq
+
     cookies = load_cookies(cfg["cookies_file"])
     at = fetch_access_token(cookies)
     vm_id = cfg.get("vm_id") or fetch_session_info(cookies)["vm_id"]
-    resp = rq.post("https://muse.ai/api/hatch/vm/wake", headers=_hatch_headers(cookies, at),
-                   json={"vm_id": vm_id, "retry_count": 0},
-                   impersonate="chrome", timeout=15)
+    resp = rq.post(
+        "https://muse.ai/api/hatch/vm/wake",
+        headers=_hatch_headers(cookies, at),
+        json={"vm_id": vm_id, "retry_count": 0},
+        impersonate="chrome",
+        timeout=15,
+    )
     out({"status": resp.status_code, "body": resp.json() if resp.text else None})
 
 
 def cmd_raw(args):
     from .gateway import ROUTES
+
     if args.method not in ROUTES:
-        print(f"unknown method '{args.method}' (see routes.json for the {len(ROUTES)} known methods)",
-              file=sys.stderr)
+        print(
+            f"unknown method '{args.method}' (see routes.json for the {len(ROUTES)} known methods)",
+            file=sys.stderr,
+        )
         sys.exit(2)
     try:
         body = json.loads(args.body) if args.body else None
@@ -636,7 +1113,7 @@ def cmd_raw(args):
         print(f"invalid --body JSON: {e}", file=sys.stderr)
         sys.exit(2)
     pp = {}
-    for kv in (args.param or []):
+    for kv in args.param or []:
         if "=" not in kv:
             print(f"bad --param '{kv}': expected k=v", file=sys.stderr)
             sys.exit(2)
@@ -644,8 +1121,13 @@ def cmd_raw(args):
         pp[k] = v
     gw = connect(load_config())
     try:
-        data = gw.request(args.method, path_params=pp or None, body=body,
-                          query=None, timeout=args.timeout)
+        data = gw.request(
+            args.method,
+            path_params=pp or None,
+            body=body,
+            query=None,
+            timeout=args.timeout,
+        )
         try:
             out(json.loads(data) if data else {})
         except json.JSONDecodeError:
@@ -655,11 +1137,14 @@ def cmd_raw(args):
 
 
 def main():
-    ap = argparse.ArgumentParser(prog="kite-cli", description="CLI for your personal muse.ai agent")
+    ap = argparse.ArgumentParser(
+        prog="kite-cli", description="CLI for your personal muse.ai agent"
+    )
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("auth", help="auth helpers"); a = p.add_subparsers(dest="op", required=True)
+    p = sub.add_parser("auth", help="auth helpers")
+    a = p.add_subparsers(dest="op", required=True)
     export_help = (
         "Copy your muse.ai login out of Google Chrome into\n"
         "~/.config/kite-cli/cookies.txt (mode 600).\n"
@@ -687,56 +1172,170 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     ).set_defaults(fn=cmd_auth_export)
 
-    sub.add_parser("status", help="VM, session count, unread, identity").set_defaults(fn=cmd_status)
+    sub.add_parser("status", help="VM, session count, unread, identity").set_defaults(
+        fn=cmd_status
+    )
     p = sub.add_parser("threads", help="list chats and side chats")
-    p.add_argument("--all", dest="archived", action="store_true", help="include archived")
+    p.add_argument(
+        "--all", dest="archived", action="store_true", help="include archived"
+    )
     p.set_defaults(fn=cmd_threads)
     p = sub.add_parser("history", help="read chat messages")
-    p.add_argument("--thread", default=None); p.add_argument("--limit", type=int, default=10)
-    p.add_argument("--raw", action="store_true"); p.set_defaults(fn=cmd_history)
+    p.add_argument("--thread", default=None)
+    p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--raw", action="store_true")
+    p.set_defaults(fn=cmd_history)
     p = sub.add_parser("send", help="send the agent a message")
-    p.add_argument("text"); p.add_argument("--thread", default=None)
-    p.add_argument("--wait", type=int, default=90, help="seconds to wait for reply (0 = don't)")
+    p.add_argument("text")
+    p.add_argument("--thread", default=None)
+    p.add_argument(
+        "--wait", type=int, default=90, help="seconds to wait for reply (0 = don't)"
+    )
     p.set_defaults(fn=cmd_send)
-    p = sub.add_parser("chat-send", help="queue an agent->chat message (shim nudge queue)")
-    p.add_argument("--chat-id", required=True); p.add_argument("--text", required=True)
-    p.add_argument("--lane", default="kite-cli"); p.set_defaults(fn=cmd_chat_send)
+    p = sub.add_parser(
+        "chat-send", help="queue an agent->chat message (shim nudge queue)"
+    )
+    p.add_argument("--chat-id", required=True)
+    p.add_argument("--text", required=True)
+    p.add_argument("--lane", default="kite-cli")
+    p.set_defaults(fn=cmd_chat_send)
     p = sub.add_parser("watch", help="tail live agent events")
-    p.add_argument("--timeout", type=int, default=60); p.add_argument("--n", type=int, default=50)
-    p.add_argument("--all", action="store_true"); p.set_defaults(fn=cmd_watch)
+    p.add_argument("--timeout", type=int, default=60)
+    p.add_argument("--n", type=int, default=50)
+    p.add_argument("--all", action="store_true")
+    p.set_defaults(fn=cmd_watch)
     p = sub.add_parser("feed", help="list feed units")
-    p.add_argument("--limit", type=int, default=None); p.add_argument("--raw", action="store_true")
+    p.add_argument("--limit", type=int, default=None)
+    p.add_argument("--raw", action="store_true")
     p.set_defaults(fn=cmd_feed)
-    sub.add_parser("feed-status", help="feed refresh status").set_defaults(fn=cmd_feed_status)
+    sub.add_parser("feed-status", help="feed refresh status").set_defaults(
+        fn=cmd_feed_status
+    )
     p = sub.add_parser("feed-react", help="react to a feed unit")
-    p.add_argument("unit"); p.add_argument("reaction", nargs="?", default="love")
+    p.add_argument("unit")
+    p.add_argument("reaction", nargs="?", default="love")
     p.set_defaults(fn=cmd_feed_react)
-    sub.add_parser("feed-prompt", help="show feed prompt").set_defaults(fn=cmd_feed_prompt)
+    sub.add_parser("feed-prompt", help="show feed prompt").set_defaults(
+        fn=cmd_feed_prompt
+    )
     sub.add_parser("goals", help="list goals").set_defaults(fn=cmd_goals)
-    p = sub.add_parser("goal", help="show one goal"); p.add_argument("id"); p.set_defaults(fn=cmd_goal)
+    p = sub.add_parser("goal", help="show one goal")
+    p.add_argument("id")
+    p.set_defaults(fn=cmd_goal)
     sub.add_parser("ideas", help="list idea cards").set_defaults(fn=cmd_ideas)
-    p = sub.add_parser("idea", help="show one idea"); p.add_argument("id"); p.set_defaults(fn=cmd_idea)
+    p = sub.add_parser("idea", help="show one idea")
+    p.add_argument("id")
+    p.set_defaults(fn=cmd_idea)
     p = sub.add_parser("idea-exec", help="execute an idea (agent acts on it)")
-    p.add_argument("id"); p.add_argument("--thread", default=None); p.set_defaults(fn=cmd_idea_exec)
+    p.add_argument("id")
+    p.add_argument("--thread", default=None)
+    p.set_defaults(fn=cmd_idea_exec)
     sub.add_parser("unread", help="unread counts").set_defaults(fn=cmd_unread)
-    p = sub.add_parser("seen", help="mark a thread seen"); p.add_argument("thread")
+    p = sub.add_parser("seen", help="mark a thread seen")
+    p.add_argument("thread")
     p.set_defaults(fn=cmd_seen)
     p = sub.add_parser("session-start", help="start a new side chat")
-    p.add_argument("--title", default=None); p.set_defaults(fn=cmd_session_start)
-    for kind, help_text in [("rename", "rename a session"), ("pin", "pin a session"),
-                            ("unpin", "unpin a session"), ("archive", "archive a session"),
-                            ("unarchive", "unarchive a session"), ("delete", "delete a session")]:
+    p.add_argument("--title", default=None)
+    p.set_defaults(fn=cmd_session_start)
+    for kind, help_text in [
+        ("rename", "rename a session"),
+        ("pin", "pin a session"),
+        ("unpin", "unpin a session"),
+        ("archive", "archive a session"),
+        ("unarchive", "unarchive a session"),
+        ("delete", "delete a session"),
+    ]:
         p = sub.add_parser(f"session-{kind}", help=help_text)
         p.add_argument("id")
         if kind == "rename":
             p.add_argument("title")
         p.set_defaults(fn=cmd_session_op(kind))
     sub.add_parser("wake", help="request a VM wake").set_defaults(fn=cmd_wake)
-    sub.add_parser("update", help="upgrade this install to the latest release").set_defaults(fn=cmd_update)
+    sub.add_parser(
+        "update", help="upgrade this install to the latest release"
+    ).set_defaults(fn=cmd_update)
     p = sub.add_parser("raw", help="call any gateway method (escape hatch)")
-    p.add_argument("method"); p.add_argument("--body", default=None)
-    p.add_argument("--param", action="append", default=[], help="path param k=v (repeatable)")
-    p.add_argument("--timeout", type=int, default=30); p.set_defaults(fn=cmd_raw)
+    p.add_argument("method")
+    p.add_argument("--body", default=None)
+    p.add_argument(
+        "--param", action="append", default=[], help="path param k=v (repeatable)"
+    )
+    p.add_argument("--timeout", type=int, default=30)
+    p.set_defaults(fn=cmd_raw)
+
+    # custom endpoints: cell filesystem, activity feed, cron-file endpoints
+    p = sub.add_parser(
+        "cell", help="read/write the agent's cell filesystem (fs.* gateway routes)"
+    )
+    c = p.add_subparsers(dest="op", required=True)
+    cp = c.add_parser("list", help="list a directory")
+    cp.add_argument("path")
+    cp.add_argument("--raw", action="store_true", help="print JSON envelope")
+    cp.set_defaults(op="list", fn=_cell_list)
+    cp = c.add_parser("read", help="read a file (streams to stdout)")
+    cp.add_argument("path")
+    cp.add_argument("--raw", action="store_true", help="print JSON envelope")
+    cp.add_argument("--len", type=int, default=262144, help="chunk size")
+    cp.set_defaults(op="read", fn=_cell_read)
+    cp = c.add_parser("stat", help="stat a file or directory")
+    cp.add_argument("path")
+    cp.set_defaults(op="stat", fn=_cell_stat)
+    cp = c.add_parser("write", help="write a file")
+    cp.add_argument("path")
+    src = cp.add_mutually_exclusive_group(required=True)
+    src.add_argument("--file", help="local file to upload")
+    src.add_argument("--data", help="inline text to write")
+    cp.add_argument("--append", action="store_true")
+    cp.add_argument("--no-overwrite", action="store_true")
+    cp.add_argument("--no-create-parent", action="store_true")
+    cp.set_defaults(op="write", fn=_cell_write)
+    cp = c.add_parser("mkdir", help="create a directory")
+    cp.add_argument("path")
+    cp.add_argument("--no-recursive", dest="recursive", action="store_false")
+    cp.set_defaults(op="mkdir", fn=_cell_mkdir)
+    cp = c.add_parser("mv", help="rename/move")
+    cp.add_argument("source")
+    cp.add_argument("destination")
+    cp.add_argument("--no-create-parent", dest="create_parent", action="store_false")
+    cp.set_defaults(op="mv", fn=_cell_mv)
+    cp = c.add_parser("rm", help="delete a file or directory")
+    cp.add_argument("path")
+    cp.add_argument("--no-recursive", dest="recursive", action="store_false")
+    cp.set_defaults(op="rm", fn=_cell_rm)
+    sub.add_parser("activity", help="list the agent's activity cards")
+    sub.choices["activity"].add_argument(
+        "--day", default=None, help="filter by YYYY-MM-DD"
+    )
+    sub.choices["activity"].add_argument("--limit", type=int, default=None)
+    sub.choices["activity"].add_argument("--raw", action="store_true")
+    sub.choices["activity"].set_defaults(fn=cmd_activity)
+    p = sub.add_parser(
+        "cron", help="cron-file endpoints in the cell (executable on schedule)"
+    )
+    c = p.add_subparsers(dest="op", required=True)
+    c.add_parser("list", help="list registered schedules").set_defaults(
+        fn=cmd_cron_list
+    )
+    cp = c.add_parser(
+        "put", help="install a cron file (fs.write into workspace/cron.d)"
+    )
+    cp.add_argument("--kind", choices=CRON_KINDS + ("interval",), required=True)
+    cp.add_argument("--id", required=True, help="endpoint id (sanitized)")
+    cp.add_argument(
+        "--spec",
+        required=True,
+        help="runonce: YYYY-MM-DDTHH:MM:SS UTC; interval: 30s|5m|24h|7d",
+    )
+    cp.add_argument("--title", default=None)
+    cp.add_argument("--timezone", default="America/Denver")
+    cp.add_argument("--chat", default=None, help="session_id to deliver output to")
+    src = cp.add_mutually_exclusive_group(required=True)
+    src.add_argument("--file", help="local markdown body (the task prompt)")
+    src.add_argument("--data", help="inline body text")
+    cp.set_defaults(fn=cmd_cron_put)
+    cp = c.add_parser("rm", help="remove a schedule by id")
+    cp.add_argument("id")
+    cp.set_defaults(fn=cmd_cron_rm)
 
     args = ap.parse_args()
     # A piped command prints JSON. The notice stays off unless both streams

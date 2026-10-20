@@ -2,272 +2,184 @@
 
 # kite-cli
 
-Talk to your personal muse.ai AI agent from the terminal.
+**Your muse.ai agent, driven from the terminal — by you, or by other agents.**
 
-[![PyPI](https://img.shields.io/pypi/v/kite-cli?style=for-the-badge)](https://pypi.org/project/kite-cli/)
-[![Python](https://img.shields.io/pypi/pyversions/kite-cli?style=for-the-badge)](https://pypi.org/project/kite-cli/)
-[![Downloads](https://img.shields.io/pepy/dt/kite-cli?style=for-the-badge)](https://pepy.tech/project/kite-cli)
-[![License: MIT](https://img.shields.io/github/license/toxicwind/kite-cli?style=for-the-badge)](https://github.com/toxicwind/kite-cli/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/toxicwind/kite-cli?style=for-the-badge)](https://github.com/toxicwind/kite-cli/stargazers)
-[![Website](https://img.shields.io/badge/website-live-3fb950?style=for-the-badge)](https://kite-cli-site.web.app)
+[![license](https://img.shields.io/github/license/toxicwind/kite-cli?style=for-the-badge)](https://github.com/toxicwind/kite-cli/blob/main/LICENSE)
+[![stars](https://img.shields.io/github/stars/toxicwind/kite-cli?style=for-the-badge)](https://github.com/toxicwind/kite-cli/stargazers)
+[![website](https://img.shields.io/badge/website-live-3fb950?style=for-the-badge)](https://kite-cli-site.web.app)
+[![release](https://img.shields.io/badge/release-0.3.2-0969da?style=for-the-badge)](https://github.com/toxicwind/kite-cli/releases)
+[![transport](https://img.shields.io/badge/transport-Noise_XX_25519_AESGCM-0969da?style=for-the-badge)](docs/PROTOCOL.md)
+[![gateway](https://img.shields.io/badge/gateway-258_methods_·_5_services-8957e5?style=for-the-badge)](src/kite_cli/routes.json)
 
 ![kite-cli hero](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/hero.webp)
 
 </div>
 
-> **Fork:** this is [`toxicwind/kite-cli`](https://github.com/toxicwind/kite-cli),
-> the canonical fork for the kite agent estate. Upstream is
-> [`nikships/muse-cli`](https://github.com/nikships/muse-cli); its history is
-> preserved. Estate additions: the [kite-agent profile](profiles/kite-agent.md)
-> (non-interactive, JSON-first setup for agents) and [estate bridge notes](docs/ESTATE.md).
+kite-cli speaks the muse.ai app's own protocol directly: HTTPS auth →
+encrypted Noise-XX WebSocket → protobuf envelopes → your personal VM. No
+browser, no scraping, no middleman. Chat, side chats, feed, goals, ideas,
+sessions — and the surfaces nobody else implements: the **cell filesystem**,
+the **activity feed**, and **executable cron endpoints**.
 
-## What is this?
+Started as a fork of [`nikships/muse-cli`](https://github.com/nikships/muse-cli)
+(history preserved); it has since diverged into its own client with a
+reverse-engineered, live-validated view of the whole platform.
 
-A command-line client for your personal muse.ai AI agent: chat from the terminal, automate it with scripts, and manage side chats, feed, goals, ideas, and sessions without opening a browser. It speaks the app's own gateway protocol directly: HTTPS auth, then an encrypted Noise-XX WebSocket to your personal VM.
+---
 
-- **Chat from the shell:** send a message and get the agent's reply back as JSON.
-- **Script it:** every command prints JSON, so it pipes into `jq`, cron jobs, and other AI agents.
-- **Full coverage:** named commands for the common tasks, plus a `raw` escape hatch for all 258 gateway methods.
-- **Agent-ready:** ships an agent skill so coding agents can drive your muse.ai agent for you.
+## Why this fork exists
 
-## Agents driving agents
+|                      | muse-cli (upstream)       | kite-cli                                                                                                            |
+| -------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Gateway methods      | core chat/feed/goals      | **all 258 methods**, including `noiseOnly` routes the route table doesn't even list                                 |
+| Cell filesystem      | —                         | `cell` command family over the gateway's `fs.*` routes: read/write/mv/rm the agent's home                           |
+| Executable endpoints | —                         | `cron put/rm/list` — schedule work inside the agent's cell                                                          |
+| Live tail            | basic watch               | activity cards, agent status, task and approval events                                                              |
+| Warm connection      | reconnects every call     | `kite-daemon` holds the Noise session open; `kite-fast` answers in milliseconds                                     |
+| Protocol knowledge   | first reverse-engineering | **live-validated**: 5-service mux, notary endorsement chain, edge API — see the [decode repos](#protocol--research) |
 
-Prompt a coding agent, it activates the kite-cli skill and runs read-only
-commands for you. Live session below: a Droid worker runs `kite-cli status`
-and `kite-cli goals`, then reports back.
-
-![Droid agent using kite-cli to check status and goals](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/demo-agent.png)
-
-## Quick Start
+## Quick start
 
 ```bash
 uv tool install kite-cli      # or: pipx install kite-cli   /   pip install kite-cli
 ```
 
-The command is `kite-cli`. The name `muse` belongs to Muse Code on many machines.
+> The command is `kite-cli`. The name `muse` belongs to Muse Code on many machines.
 
-Want the agent skill too? The installer sets up the CLI and copies the skill
-to `~/.agents/skills/kite-cli`:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/toxicwind/kite-cli/main/install.sh | bash
-```
-
-Upgrade with `kite-cli update`. In a terminal it also checks PyPI once a day and, when a newer release exists, prints that command on stderr. It does not upgrade itself. Set `MUSE_NO_UPDATE_CHECK=1` to silence the notice. The check stays quiet when output is piped or `CI` is set. Remove with `uv tool uninstall kite-cli`.
-
-Logging in is a separate one-time step. Chrome shares its cookies after you
-turn on remote debugging. Follow [Log in once](#log-in-once) before running
-any other command.
-
-## Log in once
-
-kite-cli borrows the login you already have in Chrome, saves those cookies
-to `~/.config/kite-cli/cookies.txt` (mode `600`, only your user can read it),
-and after that talks to muse.ai directly. Access tokens are fetched fresh
-on every command. When a command later says the cookies expired, repeat this
-section.
-
-Do the steps in order. Each one checks itself before you continue.
-
-### 1. Install the cookie reader
-
-`auth export` uses [agent-browser](https://github.com/vercel-labs/agent-browser)
-to read Chrome's cookies. That package comes from npm, so you need Node.js first.
+Auth is a one-time cookie export from Chrome (the same login your browser
+already has):
 
 ```bash
-node --version    # if this fails, install Node.js LTS from https://nodejs.org
-                  # and open a new terminal
-npm i -g agent-browser
-agent-browser --version
+kite-cli auth export     # drives Chrome remote debugging, saves cookies (chmod 600)
+kite-cli status          # verifies the full chain: auth → noise → your VM
 ```
 
-`npm i -g` needs permission to write to npm's global bin directory. If it
-errors with `EACCES`, pick one and use it from then on: configure an
-[npm prefix you own](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally),
-or run the install with the same rights you use for other global npm tools.
-Then check `command -v agent-browser` prints a path.
+<details>
+<summary>Auth setup in detail</summary>
 
-### 2. Let Chrome share cookies
+1. **Install the cookie reader** — `kite-cli auth export` needs Chrome with
+   remote debugging; the command guides you through it.
+2. **Be logged in** to muse.ai in that Chrome profile.
+3. **Export** — cookies are saved to `~/.config/kite-cli/cookies.txt`
+   (`chmod 600`), never anywhere else.
+4. **Verify** — `kite-cli status` auto-discovers your VM and prints the
+   agent identity.
 
-Open **Google Chrome**, the same profile you use for muse.ai. Paste this in
-the address bar:
+Cookies expire with the browser session; re-run `auth export` when status
+starts failing. Manual copy: see `kite-cli auth export --help`.
+</details>
 
-```
-chrome://inspect/#remote-debugging
-```
-
-Turn on remote debugging. The checkbox reads **Allow remote debugging for
-this browser instance**. Leave Chrome open.
-
-Turn this on while Chrome is already open and muse.ai is loaded. The export
-can see that window only after the switch is on. The page is in Chrome 144
-and newer.
-
-Stay in this window. Starting a second Chrome with
-`--remote-debugging-port` opens a different profile, and that profile does
-not have your muse.ai login.
-
-### 3. Be logged in, on a muse.ai tab
-
-In that same Chrome window, open https://muse.ai/ and log in. Leave the tab
-open. The exporter reads whichever tab is active, so the muse.ai tab has to
-be the one in front when you run the next command.
-
-### 4. Save the login
+## Commands
 
 ```bash
-kite-cli auth export
-```
-
-Chrome may ask to allow the debugging connection. Click **Allow**. If the
-command already failed, run it again after you click Allow.
-
-Success looks like this (the count varies):
-
-```
-saved 12 muse.ai cookies to /home/you/.config/kite-cli/cookies.txt
-```
-
-The command prints the fix on the failure itself. These are the ones it
-recognizes:
-
-| What it says | What to do |
-| --- | --- |
-| No running Chrome / remote debugging | The switch in step 2 is off. Turn it on in the Chrome you already have open, then run the command again. |
-| No muse.ai tab | Step 3. Open https://muse.ai/ in that same window and leave the tab open. |
-| No `hatch_sess` | The tab is open and you are logged out. Log in, then export again. The cookies file already on disk is left as it was. |
-| `agent-browser` is not installed | Step 1. `node --version`, then `npm i -g agent-browser`, then a new terminal. |
-| Daemon already running | A previous attempt is stuck. `agent-browser close`, then `kite-cli auth export`. |
-
-### 5. Check the connection
-
-```bash
-kite-cli status
-```
-
-You get JSON with your VM id, how many chats you have, the unread count, and
-your identity. That means install and login both worked.
-
-### Copy cookies by hand
-
-Use this when you don't have Node, or you don't want remote debugging on.
-
-1. In Chrome, open https://muse.ai/ and log in.
-2. Open DevTools (F12, or Ctrl+Shift+I) → **Application** → **Cookies** → `https://muse.ai`.
-3. Copy the cookies onto one line. `hatch_sess` has to be there. Separate cookies with `; ` (semicolon, space). A Netscape cookie jar (what curl writes) and a JSON object such as `{"hatch_sess": "..."}` also work.
-
-```bash
-mkdir -p ~/.config/kite-cli
-printf '%s\n' 'hatch_sess=the-value-from-devtools; other_cookie=other_value' > ~/.config/kite-cli/cookies.txt
-chmod 600 ~/.config/kite-cli/cookies.txt
-kite-cli status
-```
-
-## Usage
-
-```bash
-kite-cli threads                                  # main chat + side chats
-kite-cli history --limit 5                        # recent messages
-kite-cli history --thread <session-id> --limit 5  # one side chat
+# chat
 kite-cli send "summarize my unread" --wait 120    # send + wait for the reply
-kite-cli watch --timeout 60                       # tail live agent events
+kite-cli history --limit 5                        # recent messages
+kite-cli history --thread <session-id>            # one side chat
+kite-cli watch --timeout 60                       # live agent events
+kite-cli threads                                  # main chat + side chats
 
-kite-cli feed --limit 5
-kite-cli feed-react <unit-id> love
-kite-cli goals
-kite-cli ideas
-kite-cli idea-exec <idea-id>                      # agent acts on the idea
+# the agent's cell (gateway fs.* routes)
+kite-cli cell list .                              # cell home
+kite-cli cell read IDENTITY.md                    # stream a file
+kite-cli cell write notes/x.md --data "hi"        # write (--file to upload)
+kite-cli cell stat / mv / rm / mkdir              # full file management
 
-kite-cli session-start --title "trip planning"    # new side chat
-kite-cli session-rename <id> "new title"
-kite-cli session-archive <id>                     # also: pin, unpin, unarchive, delete
-kite-cli seen <thread-id>
-kite-cli wake
-kite-cli raw <method> --body '{}'                 # escape hatch: any of 258 gateway methods
+# activity + schedules
+kite-cli activity --limit 5                       # the agent's work cards
+kite-cli cron list                                # registered schedules
+kite-cli cron put --kind runonce --id ping \
+  --spec 2026-10-20T12:00:00 --data "do a thing"  # executable endpoint
+kite-cli cron rm ping
+
+# sessions, feed, goals, ideas
+kite-cli session-start --title "trip planning"
+kite-cli feed --limit 5        ;  kite-cli feed-react <unit-id> love
+kite-cli goals                 ;  kite-cli ideas
+kite-cli idea-exec <idea-id>   # agent acts on an idea
+
+# escape hatches
+kite-cli raw <method> --body '{}'                 # any of 258 gateway methods
+kite-fast raw <method> --body '{}'                # same, over the warm daemon
 ```
 
-Every command prints JSON. Your VM is auto-discovered from your session, and a
-random device id is generated on first run.
-
-Pipe it into other tools:
+Every command prints JSON — pipe into `jq`, cron, or another agent:
 
 ```bash
 kite-cli send "what's on my calendar today?" | jq -r .reply.text
 ```
 
-## How it works
+## Agents driving agents
 
-![how kite-cli connects](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/how-it-works.webp)
+The design center: a coding agent activates the bundled skill and drives
+your muse.ai agent read-only while you keep working. Live demo:
 
-![kite-cli connection flow](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/flow.webp)
+![Droid agent using kite-cli](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/demo-agent.png)
 
-See [docs/PROTOCOL.md](https://github.com/toxicwind/kite-cli/blob/main/docs/PROTOCOL.md)
-for the full protocol notes, including the method table and the server quirks
-found during reverse engineering.
+The skill (`skills/kite-cli/SKILL.md`) ships with the installer and covers
+install check, auth setup, and the full command reference — plus a strict
+read-only usage contract so an agent can't send, react, or execute on your
+behalf unless you say so.
 
-## Documentation
+## Architecture
 
-| Resource | Description |
-|----------|-------------|
-| [skills/kite-cli/SKILL.md](https://github.com/toxicwind/kite-cli/blob/main/skills/kite-cli/SKILL.md) | Agent skill: install check, auth setup, command reference |
-| [docs/PROTOCOL.md](https://github.com/toxicwind/kite-cli/blob/main/docs/PROTOCOL.md) | Gateway protocol reference: auth chain, Noise transport, framing, method quirks |
-| [routes.json](https://github.com/toxicwind/kite-cli/blob/main/src/kite_cli/routes.json) | All 258 gateway methods with paths and services |
-| [profiles/kite-agent.md](https://github.com/toxicwind/kite-cli/blob/main/profiles/kite-agent.md) | Agent profile: non-interactive kite setup, usage contract, security notes |
-| [docs/ESTATE.md](https://github.com/toxicwind/kite-cli/blob/main/docs/ESTATE.md) | Fork notes: protocol cross-reference, harvest provenance |
-| `kite-cli raw --help` | Escape hatch for calling any gateway method directly |
+```
+kite-cli ─┬─ HTTPS  cookies → /api/auth/check → access token
+          │         /api/hatch/token {vmAddress, vmName} → hatch token
+          │
+          ├─ wss://hatch.metaaivm.com/v1/noise?vm_id=…&auth_token=…
+          │    Noise_XX_25519_AESGCM_SHA256  (ephemeral static key)
+          ▼
+       protobuf envelopes  NoiseTransportFrame → ServiceRequest → ServiceFrame
+          │                 services: daemon 0 · sentinel 1 · vault 2 · authd 3 · ssh_access 4
+          ▼
+       your personal VM — chat, fs, tasks, feed, goals, approvals, …
+```
+
+- **Warm mode:** `kite-daemon` keeps the Noise session open and serves
+  `kite-fast` over `~/.config/kite-cli/daemon.sock` — no 2-6s handshake per
+  call.
+- **Notary-protected routes:** sensitive routes (the whole `ssh_access`
+  service) require per-route endorsement tokens; the full chain is
+  implemented and live-validated — see
+  [docs/PROTOCOL.md](docs/PROTOCOL.md).
+
+## Protocol & research
+
+The protocol notes are decode-driven and continuously re-verified against
+live traffic:
+
+| Resource                                                                                             | What's inside                                                                                        |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [docs/PROTOCOL.md](docs/PROTOCOL.md)                                                                 | auth chain, Noise transport, framing, the 5-service mux, notary endorsements, server quirks          |
+| [src/kite_cli/routes.json](src/kite_cli/routes.json)                                                 | all 258 gateway methods with paths and services                                                      |
+| [muse-web-bundle-decode](https://github.com/toxicwind/muse-web-bundle-decode)                        | decoded web client: 161 edge API paths, SSH access chain, auto-decoder middleman (`noise_middec.py`) |
+| [hatch-decode · pass 4](https://github.com/toxicwind/hatch-decode/blob/main/pass4/FINDINGS-pass4.md) | the cell binary: `ssh_access.rs`, ingress trust, peerd, quota machinery                              |
+| [estate-recon / muse-meta-hatch](https://github.com/toxicwind/estate-recon)                          | runtime-cell architecture and field docs                                                             |
 
 ## Development
 
 ```bash
-git clone https://github.com/toxicwind/kite-cli.git
-cd kite-cli
-uv run kite-cli --help
+git clone https://github.com/toxicwind/kite-cli && cd kite-cli
+uv sync && uv run pytest          # unit tests
+uv run kite-cli status            # against your real VM
 ```
 
-```
-kite-cli/
-assets/              README artwork (generated with Muse Image)
-docs/PROTOCOL.md     protocol reference for re-derivation
-skills/kite-cli/     agent skill
-src/kite_cli/
-  cli.py             argument parsing and all commands
-  gateway.py         gateway client (auth, Noise transport, subscriptions)
-  routes.json        258 gateway methods extracted from the web client
-  desc0.bin          protobuf descriptors for the wire framing
-  desc1.bin
-install.sh           CLI + skill installer
-pyproject.toml
-```
+- `tests/probe_fs_shapes.py` / `tests/probe_fs_write.py` — executable
+  documentation of the `fs.*` request schemas, discovered live
+- `tests/repo_cli.py` — run the repo source against the installed venv deps
+- `scripts/hero_gen.py` — regenerates the hero banner deterministically
+  (`hero-gen` if you symlink it); no design tool required
 
-## Setup notes
+## Provenance
 
-- Login is the [Log in once](#log-in-once) section above. Cookies live at
-  `~/.config/kite-cli/cookies.txt` (mode 600). Access and gateway tokens are
-  fetched fresh on every run.
-- `auth export` reads those cookies from Google Chrome through
-  [agent-browser](https://github.com/vercel-labs/agent-browser). Chrome has
-  to be open, with remote debugging on
-  (`chrome://inspect/#remote-debugging`) and a logged-in muse.ai tab in front.
-- Respect muse.ai's terms and rate limits. Internal APIs are unversioned and
-  can change; if calls fail, re-derive from a fresh app bundle.
-
-## Contributing
-
-Issues and PRs welcome. If the protocol drifts, the most useful contribution
-is a note of which method broke and the new server error text.
-
-<a href="https://github.com/toxicwind/kite-cli/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=toxicwind/kite-cli" />
-</a>
+Forked from [`nikships/muse-cli`](https://github.com/nikships/muse-cli) —
+thanks for the original reverse-engineering groundwork. Since the fork:
+endpoint coverage went from core to full (including `noiseOnly` routes),
+the cell/activity/cron families were added, the daemon mode was built, and
+the protocol documentation was rewritten from live traffic. MIT, same as
+upstream.
 
 ## License
 
-MIT. See [LICENSE](https://github.com/toxicwind/kite-cli/blob/main/LICENSE).
-
----
-
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=toxicwind/kite-cli&type=Date)](https://star-history.com/#toxicwind/kite-cli&Date)
-
-</div>
+MIT — see [LICENSE](LICENSE).

@@ -45,8 +45,7 @@ class DaemonGateway:
         resp = json.loads(buf.split(b"\n", 1)[0])
         if resp.get("ok"):
             return resp.get("result")
-        raise GatewayError(resp.get("status"),
-                           resp.get("error", "daemon error"))
+        raise GatewayError(resp.get("status"), resp.get("error", "daemon error"))
 
     def _roundtrip(self, req, deadline_s):
         try:
@@ -63,8 +62,11 @@ class DaemonGateway:
         with open(log_path, "ab") as log:
             subprocess.Popen(
                 [sys.executable, "-m", "kite_cli.daemon"],
-                stdout=log, stderr=log, stdin=subprocess.DEVNULL,
-                start_new_session=True)
+                stdout=log,
+                stderr=log,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+            )
         # The daemon socket appears fast; the gateway behind it connects
         # on first real call. Wait only for the socket + ping.
         deadline = time.time() + 15
@@ -77,20 +79,29 @@ class DaemonGateway:
                     pass
             time.sleep(0.2)
 
-    def call_json(self, method, path_params=None, body=None, query=None,
-                  timeout=30):
+    def call_json(self, method, path_params=None, body=None, query=None, timeout=30):
         return self._roundtrip(
-            {"method": method, "path_params": path_params, "body": body,
-             "query": query, "deadline_s": timeout},
-            deadline_s=timeout)
+            {
+                "method": method,
+                "path_params": path_params,
+                "body": body,
+                "query": query,
+                "deadline_s": timeout,
+            },
+            deadline_s=timeout,
+        )
+
+    def request(self, method, path_params=None, body=None, query=None, timeout=30):
+        result = self.call_json(
+            method, path_params=path_params, body=body, query=query, timeout=timeout
+        )
+        return json.dumps(result).encode()
 
     def subscribe_raw(self, *a, **kw):
-        raise RuntimeError(
-            "streaming is not served by kite-fast; use `kite-cli watch`")
+        raise RuntimeError("streaming is not served by kite-fast; use `kite-cli watch`")
 
     def subscribe_json(self, *a, **kw):
-        raise RuntimeError(
-            "streaming is not served by kite-fast; use `kite-cli watch`")
+        raise RuntimeError("streaming is not served by kite-fast; use `kite-cli watch`")
 
     def close(self):
         pass
