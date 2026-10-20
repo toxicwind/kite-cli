@@ -21,6 +21,19 @@ browser, no scraping, no middleman. Chat, side chats, feed, goals, ideas,
 sessions — and the surfaces nobody else implements: the **cell filesystem**,
 the **activity feed**, and **executable cron endpoints**.
 
+## Why "kite"?
+
+The name is doctrine, not branding. Security tooling kept tripping brittle
+LLM refusals on canonical binary names — so the estate's [`ferret-den`](https://github.com/toxicwind/ferret-den)
+MCP server decouples them: `den:whisker` runs `subfinder`, `den:fang` runs
+`nuclei`. _The agent sees the job; the name stays out of the catalog._
+
+The platform client got the same treatment. The muse.ai runtime cell was
+codenamed `hatch` — operationally renamed **kite**, which is both a young
+ferret (a _kit_, pairing with `ferret-den`) and the bird: swift, sharp, four
+letters. The estate's agents wear the same class of names — osprey, finch,
+wraith, sable. `hatch` survives only as a backward-looking provenance tie.
+
 Started as a fork of [`nikships/muse-cli`](https://github.com/nikships/muse-cli)
 (history preserved); it has since diverged into its own client with a
 reverse-engineered, live-validated view of the whole platform.
@@ -109,17 +122,19 @@ Every command prints JSON — pipe into `jq`, cron, or another agent:
 kite-cli send "what's on my calendar today?" | jq -r .reply.text
 ```
 
-## Agents driving agents
+## Built for agents driving agents
 
-The design center: a coding agent activates the bundled skill and drives
-your muse.ai agent read-only while you keep working. Live demo:
+The design center: your coding agent activates the bundled skill and drives
+your muse.ai agent **read-only** while you keep working — no browser, no
+tab-switching, no hand-copied context.
 
-![Droid agent using kite-cli](https://raw.githubusercontent.com/toxicwind/kite-cli/main/assets/demo-agent.png)
-
-The skill (`skills/kite-cli/SKILL.md`) ships with the installer and covers
-install check, auth setup, and the full command reference — plus a strict
-read-only usage contract so an agent can't send, react, or execute on your
-behalf unless you say so.
+- `skills/kite-cli/SKILL.md` ships with the installer: install check, auth
+  setup, the full command reference, and a strict usage contract (an agent
+  can't send, react, or execute on your behalf unless you say so)
+- `profiles/kite-agent.md` — non-interactive, JSON-first profile for
+  non-human operators
+- every command emits JSON, so `kite-cli` composes with `jq`, cron jobs,
+  CI steps, and other agents' tool loops
 
 ## Architecture
 
