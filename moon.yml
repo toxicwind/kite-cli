@@ -1,0 +1,33 @@
+$schema: "https://moonrepo.dev/schemas/project.json"
+
+# kite-cli — terminal client for the muse.ai agent (all 258 gateway methods,
+# cell fs/activity/cron families, warm-connection daemon).
+language: "python"
+stack: "backend"
+type: "library"
+tags:
+  - "ranch"
+  - "component"
+  - "muse"
+tasks:
+  test:
+    command: "uv run pytest"
+    options:
+      cache: false
+    description: "unit tests"
+  smoke:
+    command: "python3 tests/repo_cli.py cell --help"
+    options:
+      cache: false
+    description: "repo-source CLI smoke: cell endpoint family renders"
+  probes:
+    command: "python3 tests/probe_fs_shapes.py"
+    envFile: ".env"
+    options:
+      cache: false
+    description: "live fs.* request-shape probes against the real VM (needs cookies)"
+  hero:
+    command: "python3 scripts/hero_gen.py"
+    options:
+      cache: false
+    description: "regenerate the hero banner (assets/ + site/)"
