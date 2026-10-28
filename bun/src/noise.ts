@@ -78,7 +78,7 @@ export class CipherState {
   encryptWithAd(ad: Buffer, plaintext: Buffer): Buffer {
     if (!this.hasKey()) return plaintext;
     const c = createCipheriv("aes-256-gcm", this.key!, this.nonceBytes(this.nonce));
-    c.setAAD(ad); // python AESGCM(nonce, pt, ad) — AAD is part of the wire contract
+    if (ad.length) c.setAAD(ad); // python AESGCM(nonce, pt, ad); b"" ≡ NULL AAD (Bun EVP empty-AAD quirk)
     const ct = Buffer.concat([c.update(plaintext), c.final(), c.getAuthTag()]); // python AESGCM: ct||tag
     this.nonce++;
     return ct;
@@ -88,7 +88,7 @@ export class CipherState {
     if (!this.hasKey()) return ciphertext;
     const tag = ciphertext.subarray(ciphertext.length - 16);
     const d = createDecipheriv("aes-256-gcm", this.key!, this.nonceBytes(this.nonce));
-    d.setAAD(ad); // AAD symmetric with encrypt — cross-impl mandatory
+    if (ad.length) d.setAAD(ad); // AAD symmetric with encrypt — cross-impl mandatory
     d.setAuthTag(tag);
     const pt = Buffer.concat([d.update(ciphertext.subarray(0, ciphertext.length - 16)), d.final()]);
     this.nonce++;
@@ -210,7 +210,7 @@ export class NoiseHandshakeState {
     this.ss.mixHash(this.remoteEphemeral);
     this.ss.mixKey(dh(this.ephemeral.private, this.remoteEphemeral!));       // ee
     this.remoteStatic = this.ss.decryptAndHash(msg.subarray(32, 80));        // s
-    this.ss.mixKey(dh(this.ephemeral.private, this.remoteStatic));           // es
+    this.ss.mixKey(dh(this.ephemeral.private, this.remoteStatic));         // es = DH(ephemeral_i, static_r) — XX msg2 spec
     const payload = this.ss.decryptAndHash(msg.subarray(80));
     this.stage = 2;
     return payload;
