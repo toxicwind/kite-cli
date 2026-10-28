@@ -31,6 +31,15 @@ export function rawPublic(k: KeyObject): Buffer {
   return Buffer.from(k.export({ type: "spki", format: "der" })).subarray(-32);
 }
 
+export function rawPublicFromRaw(raw: Buffer): Buffer {
+  const pub = createPublicKey({ key: { kty: "OKP", crv: "X25519", x: b64url(raw) }, format: "jwk" });
+  return Buffer.from(pub.export({ type: "spki", format: "der" })).subarray(-32);
+}
+
+function b64url(buf: Buffer): string {
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 function importPublicRaw(raw: Buffer): KeyObject {
   return createPublicKey({ key: Buffer.concat([SPKI_PREFIX, raw]), format: "der", type: "spki" });
 }
