@@ -1,44 +1,62 @@
-"""Noise_XX responder for cross-impl interop vector test."""
-import sys, socket
+# interop_responder.py — LIVE python SSOT Noise_XX responder over TCP (kappa wire contract):
+#   recv 32B msg1 (raw) -> send u16be msg2 -> recv u16be msg3 -> split -> echo u16be frames.
+# Usage: interop_responder.py <static_hex> <ephemeral_hex> <port>
+import socket
+import struct
+import sys
+
 sys.path.insert(0, "/mnt/nvme0n1/cell-mirror/noise_build")
-from noise_protocol import NoiseHandshakeState
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+import noise_protocol as np  # noqa: E402
+import cryptography.hazmat.primitives.asymmetric.x25519 as x  # noqa: E402
 
-STATIC_HEX = sys.argv[1]
-EPHEM_HEX = sys.argv[2]
-PORT = int(sys.argv[3])
+static_hex, ephem_hex, port = sys.argv[1], sys.argv[2], int(sys.argv[3])
 
-hs = NoiseHandshakeState(
+r = np.NoiseHandshakeState(
     is_initiator=False,
-    static_key=X25519PrivateKey.from_private_bytes(bytes.fromhex(STATIC_HEX)),
+    static_key=x.X25519PrivateKey.from_private_bytes(bytes.fromhex(static_hex)),
     mode="standard",
 )
-hs.ephemeral_key = X25519PrivateKey.from_private_bytes(bytes.fromhex(EPHEM_HEX))
+r.ephemeral_key = x.X25519PrivateKey.from_private_bytes(bytes.fromhex(ephem_hex))
 
-srv = socket.socket()
+srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-srv.bind(("127.0.0.1", PORT))
+srv.bind(("127.0.0.1", port))
 srv.listen(1)
+
 conn, _ = srv.accept()
-m1 = b""
-while len(m1) < 32:
-    chunk = conn.recv(32 - len(m1))
-    if not chunk:
+buf = b""
+
+
+def recv_exact(n: int) -> bytes:
+    global buf
+    while len(buf) < n:
+        chunk = conn.recv(4096)
+        if not chunk:
+            raise SystemExit("peer closed")
+        buf += chunk
+    out, buf = buf[:n], buf[n:]
+    return out
+
+
+def recv_frame() -> bytes:
+    (n,) = struct.unpack(">H", recv_exact(2))
+    return recv_exact(n)
+
+
+# handshake: msg1 raw 32B (XX standard, empty payload), msg2 u16be-framed, msg3 u16be-framed
+r.read_msg1(recv_exact(32))
+msg2 = r.write_msg2()
+conn.sendall(struct.pack(">H", len(msg2)) + msg2)
+read_msg3_ret = r.read_msg3(recv_frame())
+rx, tx = read_msg3_ret[1]  # (plaintext, (recv_cipher, send_cipher))
+
+# transport: decrypt each frame, echo re-encrypted
+while True:
+    try:
+        frame = recv_frame()
+    except SystemExit:
         break
-    m1 += chunk
-hs.read_msg1(bytes(m1))
-msg2 = hs.write_msg2()
-conn.sendall(len(msg2).to_bytes(2, "big") + msg2)
-send_c, recv_c = hs.split()
-ln = int.from_bytes(conn.recv(2), "big")
-ct = b""
-while len(ct) < ln:
-    chunk = conn.recv(ln - len(ct))
-    if not chunk:
-        break
-    ct += chunk
-pt = recv_c.decrypt_with_ad(b"", bytes(ct))
-out = send_c.encrypt_with_ad(b"", pt)
-conn.sendall(len(out).to_bytes(2, "big") + out)
-srv.close()
+    pt = rx.decrypt_with_ad(b"", frame)
+    ct = tx.encrypt_with_ad(b"", pt)
+    conn.sendall(struct.pack(">H", len(ct)) + ct)
 conn.close()

@@ -1,7 +1,7 @@
 import { strictEqual, ok } from "node:assert";
 import { execFileSync, spawn } from "child_process";
 import { Socket } from "net";
-import { NoiseHandshakeState, rawPublic, importPrivateRaw } from "../src/noise.ts";
+import { NoiseHandshakeState } from "../src/noise.ts";
 
 const STATIC = Buffer.from(Array.from({ length: 32 }, (_, i) => i + 1));   // fixed static key
 const EPHEM = Buffer.from(Array.from({ length: 32 }, (_, i) => i + 33));    // fixed ephemeral key
@@ -12,9 +12,9 @@ test("interop-vector: fixed-key msg1 matches python SSOT byte-for-byte", () => {
   const bunState = new NoiseHandshakeState({
     isInitiator: true,
     mode: "standard",
-    staticKey: { private: importPrivateRaw(STATIC), publicRaw: rawPublic(importPrivateRaw(STATIC)) },
+    staticKey: { private: importPrivateRaw(STATIC), publicRaw: importPublicRaw(STATIC) },
   });
-  bunState.ephemeral = { private: importPrivateRaw(EPHEM), publicRaw: rawPublic(importPrivateRaw(EPHEM)) };
+  bunState.ephemeral = { private: importPrivateRaw(EPHEM), publicRaw: importPublicRaw(EPHEM) };
   const bunMsg1 = bunState.writeMsg1();
 
   strictEqual(bunMsg1.toString("hex"), pythonMsg1, "msg1 must be identical before any transport test");
@@ -41,9 +41,9 @@ test("interop-vector: live bun<->python XX round-trip with encrypted echo", asyn
   const alice = new NoiseHandshakeState({
     isInitiator: true,
     mode: "standard",
-    staticKey: { private: importPrivateRaw(STATIC), publicRaw: rawPublic(importPrivateRaw(STATIC)) },
+    staticKey: { private: importPrivateRaw(STATIC), publicRaw: importPublicRaw(STATIC) },
   });
-  alice.ephemeral = { private: importPrivateRaw(EPHEM), publicRaw: rawPublic(importPrivateRaw(EPHEM)) };
+  alice.ephemeral = { private: importPrivateRaw(EPHEM), publicRaw: importPublicRaw(EPHEM) };
 
   const sock = new Socket();
   await new Promise<void>((res, rej) => { sock.connect(port, "127.0.0.1", res); sock.on("error", rej); });
