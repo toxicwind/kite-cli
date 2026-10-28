@@ -1,8 +1,7 @@
-// Chaos-harness hooks for kite/hatch (yote == bridge master lineage).
+// @toxicwind/kite/chaos — chaos harness hooks for kite/hatch (yote == bridge master lineage).
 // A chaos window: schedule (croner-style string is the caller's concern),
 // guards (disk/thermal — the fleet substrate died on a full disk), then
 // injected faults against the route table, with automatic undo.
-
 import { statfs } from "node:fs/promises";
 
 export interface ChaosGuard { diskFreePctMin?: number; maxTempC?: number; }
@@ -22,17 +21,14 @@ export async function chaosWindow(w: ChaosWindow, g?: ChaosGuard): Promise<{ ran
   const t0 = performance.now();
   const guard = await guardsOk(g);
   if (!guard.ok) return { ran: false, reason: guard.reason, ms: performance.now() - t0 };
-  // undo runs whenever a fault ATTEMPTED — a chaos window never leaves the
-  // table mutated. Guard-blocked windows never fault, so never undo.
+  let didUndo = false;
   try {
     await w.fault();
     return { ran: true, ms: performance.now() - t0 };
   } catch (e) {
-    await w.undo();
+    await w.undo(); didUndo = true;
     throw e;
-  }
-  finally {
-    // fault returned normally: undo still runs (fault may have half-applied)
-    await w.undo();
+  } finally {
+    if (!didUndo) await w.undo();
   }
 }

@@ -78,6 +78,7 @@ export class CipherState {
   encryptWithAd(ad: Buffer, plaintext: Buffer): Buffer {
     if (!this.hasKey()) return plaintext;
     const c = createCipheriv("aes-256-gcm", this.key!, this.nonceBytes(this.nonce));
+    c.setAAD(ad); // python AESGCM(nonce, pt, ad) — AAD is part of the wire contract
     const ct = Buffer.concat([c.update(plaintext), c.final(), c.getAuthTag()]); // python AESGCM: ct||tag
     this.nonce++;
     return ct;
@@ -87,6 +88,7 @@ export class CipherState {
     if (!this.hasKey()) return ciphertext;
     const tag = ciphertext.subarray(ciphertext.length - 16);
     const d = createDecipheriv("aes-256-gcm", this.key!, this.nonceBytes(this.nonce));
+    d.setAAD(ad); // AAD symmetric with encrypt — cross-impl mandatory
     d.setAuthTag(tag);
     const pt = Buffer.concat([d.update(ciphertext.subarray(0, ciphertext.length - 16)), d.final()]);
     this.nonce++;
