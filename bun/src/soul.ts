@@ -17,7 +17,7 @@
 //     pattern-borrow, keep moving. Safety notices are not hibug.
 
 import { z } from "zod";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const IdentityDocSchema = z.object({
@@ -82,9 +82,11 @@ export class SoulAdapter {
   remember(line: string): boolean {
     try {
       const p = join(this.dir, "memories.md");
+      mkdirSync(join(this.dir), { recursive: true });   // ensure the profile dir exists
       const cur = existsSync(p) ? readFileSync(p, "utf8") : "# memories\n";
       if (cur.includes(line)) return false;   // idempotent
-      require("node:fs").appendFileSync(p, `\n- ${line}`);
+      mkdirSync(this.dir, { recursive: true }); // fresh soul dir self-heals
+      appendFileSync(p, `\n- ${line}`);
       return true;
     } catch { return false; }
   }

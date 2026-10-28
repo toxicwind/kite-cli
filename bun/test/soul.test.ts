@@ -18,8 +18,9 @@ test("bootstrap injects the doctrine", () => {
 });
 
 test("remember() is idempotent", () => {
-  const s = new SoulAdapter();
+  const dir = `${import.meta.dir}/.tmp-soul-test-${Date.now()}`;
+  const s = new SoulAdapter(dir);
   const line = "test-memory-idempotency-check";
-  expect(s.remember(line)).toBe(true);
-  expect(s.remember(line)).toBe(false);
+  expect(s.remember(line)).toBe(true);   // first write lands
+  expect(s.remember(line)).toBe(false);  // replay is a no-op — the idempotency contract
 });
