@@ -20,3 +20,4 @@ config.json
 .envrc
 .env.local
 *.jsonl
+.tmp-*
