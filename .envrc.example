@@ -1,0 +1,7 @@
+# kite-cli .envrc — optional, and only if you use direnv. kite-cli needs no
+# environment variables to work. Standard install copies ~/.config/kite-cli
+# cookies on auth; nothing else is read from the environment.
+# If you want the estate env (keyring credentials via secretsmith),
+# copy this to .envrc and point it at your estate root:
+#   source_env_if_exists "$HOME/estate/.envrc"
+# Otherwise omit .envrc entirely.

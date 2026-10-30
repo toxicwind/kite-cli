@@ -69,7 +69,6 @@ Changelog = "https://github.com/toxicwind/kite-cli/releases"
 [project.scripts]
 kite-cli = "kite_cli.cli:main"
 kite-daemon = "kite_cli.daemon:main"
-kite-fast = "kite_cli.fast:main"
 
 [tool.hatch.version]
 path = "src/kite_cli/__init__.py"
