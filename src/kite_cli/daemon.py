@@ -54,6 +54,8 @@ class GatewayHolder:
         self._gw = None
         self._lock = threading.Lock()
         self._built_at = None
+        self.started_at = time.time()
+        self.last_auth_ok = None
 
     def _build(self):
         from .cli import connect, load_config
@@ -62,6 +64,7 @@ class GatewayHolder:
             self._gw.close()
         self._gw = connect(load_config())
         self._built_at = time.time()
+        self.last_auth_ok = time.time()
         _log(f"gateway connected (vm {self._gw.vm_id})")
 
     @property
@@ -102,6 +105,112 @@ class GatewayHolder:
 HOLDER = GatewayHolder()
 
 
+# ── maximal surface: health + auth refresh (2026-10-28) ─────────────────────
+
+def cookies_path():
+    from .cli import CONFIG_DIR
+
+    return os.path.join(CONFIG_DIR, "cookies.txt")
+
+
+def cookie_age_s():
+    """Seconds since the cookies file was last written (0 if missing → very stale)."""
+    try:
+        return max(0.0, time.time() - os.stat(cookies_path()).st_mtime)
+    except OSError:
+        return float("inf")
+
+
+def health_snapshot():
+    age = cookie_age_s()
+    age_days = age / 86400.0 if age != float("inf") else None
+    return {
+        "daemon": {
+            "sock": sock_path(),
+            "pid": os.getpid(),
+            "uptime_s": round(time.time() - HOLDER.started_at, 1),
+            "gateway_connected": HOLDER._gw is not None,
+            "lane_uptime_s": HOLDER.uptime_s,
+            "last_auth_ok_s_ago": (round(time.time() - HOLDER.last_auth_ok, 1)
+                                   if HOLDER.last_auth_ok else None),
+        },
+        "auth": {
+            "cookies_path": cookies_path(),
+            "cookies_age_s": (round(age, 1) if age != float("inf") else None),
+            "cookies_age_days": (round(age_days, 2) if age_days is not None else None),
+            "stale": (age_days or 0) > 7,
+            "vm_id": HOLDER.vm_id,
+        },
+        "gateway": {
+            "connected": HOLDER._gw is not None,
+            "vm_id": HOLDER.vm_id,
+            "lane_uptime_s": HOLDER.uptime_s,
+        },
+    }
+
+
+def _ladder_step(step, fn):
+    try:
+        detail = fn()
+        return {"step": step, "ok": True, "detail": str(detail)[:300]}
+    except Exception as e:  # noqa: BLE001 - the ladder reports, never throws
+        return {"step": step, "ok": False, "detail": f"{type(e).__name__}: {e}"}
+
+
+def auth_refresh():
+    """Auth refresh ladder — first-class because a human ritual (Chrome
+    re-export) is not a daemon-compatible auth story. Ladder:
+      1. in-place gateway rebuild (access/hatch tokens re-fetched from cookies)
+      2. VM wake + rebuild (asleep VM masquerades as auth failure)
+      3. verdict: manual re-export needed (escalate to fleet, never fake it)
+    """
+    ladder = []
+    s1 = _ladder_step("gateway-rebuild", lambda: (HOLDER._build(), f"vm={HOLDER.vm_id}")[1])
+    ladder.append(s1)
+    if s1["ok"]:
+        return {"refreshed": True, "vm_id": HOLDER.vm_id, "ladder": ladder}
+
+    s2 = _ladder_step("vm-wake+rebuild", lambda: _wake_and_rebuild())
+    ladder.append(s2)
+    if s2["ok"]:
+        return {"refreshed": True, "vm_id": HOLDER.vm_id, "ladder": ladder}
+
+    ladder.append({"step": "manual-re-export", "ok": False,
+                   "detail": "cookies stale — run `kite-cli auth export` (Chrome "
+                             "remote debugging) or harvest via browserless profile"})
+    return {"refreshed": False, "ladder": ladder}
+
+
+def _wake_and_rebuild():
+    """Real config contract: {cookies_file, node_id} — vm_id is discovered at
+    connect time, so wake = fetch access token from cookies, then rebuild the
+    lane (connect() performs session+hatch+Noise_XX and binds vm_id)."""
+    from .cli import load_config, CONFIG_DIR  # noqa: F401
+    import json as _json
+
+    cfg = load_config()
+    cf = cfg.get("cookies_file") or os.path.join(CONFIG_DIR, "cookies.txt")
+    if not os.path.exists(cf):
+        raise RuntimeError(f"cookies file missing: {cf}")
+    from .gateway import load_cookies, fetch_access_token, wake_vm
+
+    cookies = load_cookies(cf)
+    # session probe (401 raises AuthError here with a real status)
+    fetch_access_token(cookies)
+    # vm_id unknown pre-connect: wake via the *session info* path the CLI uses
+    from .gateway import fetch_session_info
+
+    info = fetch_session_info(cookies)
+    vm_id = (info or {}).get("vm_id") or (info or {}).get("id")
+    if vm_id:
+        try:
+            wake_vm(cookies, vm_id)
+        except Exception:  # noqa: BLE001 - wake is best-effort; rebuild decides
+            pass
+    HOLDER._build()
+    return f"session ok; vm={vm_id or HOLDER.vm_id}; lane rebuilt"
+
+
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
         line = self.rfile.readline()
@@ -116,6 +225,10 @@ class Handler(socketserver.StreamRequestHandler):
         if method == "__ping__":
             return self._reply({"ok": True, "result": {
                 "vm_id": HOLDER.vm_id, "uptime_s": HOLDER.uptime_s}})
+        if method == "__health__":
+            return self._reply({"ok": True, "result": health_snapshot()})
+        if method == "__auth_refresh__":
+            return self._reply({"ok": True, "result": auth_refresh()})
         try:
             result = HOLDER.call(
                 method,

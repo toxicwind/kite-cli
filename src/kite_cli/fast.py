@@ -97,6 +97,19 @@ class DaemonGateway:
         )
         return json.dumps(result).encode()
 
+    def _open(self, method, path_params=None, body=None, query=None, timeout=30):
+        """Open a gateway method on the warm daemon (kite-fast path).
+
+        kite-fast deliberately does not serve live streaming (subscribe_* raise),
+        but cmd_send needs a stream sid to mark a fire-and-forget send. Mirror the
+        full Gateway._open shape (route/path resolution) and return a valid sid by
+        issuing the request through call_json — the daemon performs the send and
+        returns its event sid, which the fire-and-forget branch of cmd_send prints.
+        """
+        return self.call_json(
+            method, path_params=path_params, body=body, query=query, timeout=timeout
+        )
+
     def subscribe_raw(self, *a, **kw):
         raise RuntimeError("streaming is not served by kite-fast; use `kite-cli watch`")
 

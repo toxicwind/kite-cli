@@ -49,7 +49,22 @@ def load_config():
     return cfg
 
 
-def connect(cfg):
+def connect(cfg, prefer_daemon=True):
+    """Full integration (2026-10-28): the warm kite-daemon lane is the DEFAULT
+    connect path — one-RPC cost instead of the full ceremony per call. The
+    direct Noise-XX ceremony is the fallback (daemon down, or streaming needed
+    by callers that require subscribe_*; they pass prefer_daemon=False).
+
+    This is the kite-fast merge: one bin (`kite-cli`), fast by default.
+    """
+    if prefer_daemon:
+        try:
+            from .fast import DaemonGateway
+
+            return DaemonGateway()
+        except Exception:
+            # daemon down/unstartable → fall through to the ceremony
+            pass
     if not os.path.exists(cfg["cookies_file"]):
         raise AuthError(
             f"no cookies at {cfg['cookies_file']}. Run `kite-cli auth export` "
@@ -886,7 +901,9 @@ def cmd_cron(args):
 
 
 def cmd_watch(args):
-    gw = connect(load_config())
+    # streaming (subscribe_json) is direct-ceremony only — the daemon serves
+    # unary RPCs; force the real lane here.
+    gw = connect(load_config(), prefer_daemon=False)
     try:
         recs = gw.subscribe_json(
             "chat.subscribe",
