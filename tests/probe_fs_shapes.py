@@ -4,7 +4,7 @@ import sys
 sys.path.insert(
     0, "/home/toxic/.local/share/uv/tools/kite-cli/lib/python3.12/site-packages"
 )
-sys.path.insert(0, "/home/toxic/estate/ranch/hatch/kite-cli/src")
+sys.path.insert(0, "/home/toxic/pens/estate/ranch/hatch/kite-cli/src")
 from kite_cli.cli import connect, load_config
 from kite_cli.gateway import GatewayError
 

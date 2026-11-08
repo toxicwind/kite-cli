@@ -34,10 +34,6 @@ ferret (a _kit_, pairing with `ferret-den`) and the bird: swift, sharp, four
 letters. The estate's agents wear the same class of names — osprey, finch,
 wraith, sable. `hatch` survives only as a backward-looking provenance tie.
 
-Started as a fork of [`nikships/muse-cli`](https://github.com/nikships/muse-cli)
-(history preserved); it has since diverged into its own client with a
-reverse-engineered, live-validated view of the whole platform.
-
 ---
 
 ## Why this fork exists

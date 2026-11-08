@@ -4,7 +4,7 @@
 # kite-fast clients over ~/.config/kite-cli/daemon.sock (see daemon.py).
 [daemons.kite-daemon]
 run = "exec /home/toxic/.local/bin/kite-daemon"
-dir = "/home/toxic/estate/ranch/hatch/kite-cli"
+dir = "/home/toxic/pens/estate/ranch/hatch/kite-cli"
 mise = false
 retry = true
 boot_start = true
